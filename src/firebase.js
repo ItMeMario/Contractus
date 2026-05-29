@@ -1,0 +1,389 @@
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged as fbOnAuthStateChanged 
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  addDoc, 
+  deleteDoc, 
+  query, 
+  orderBy 
+} from 'firebase/firestore';
+import { 
+  getStorage, 
+  ref, 
+  uploadBytesResumable, 
+  getDownloadURL, 
+  deleteObject 
+} from 'firebase/storage';
+
+// Verifica se as variáveis de ambiente do Firebase foram preenchidas
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+const isFirebaseConfigured = apiKey && apiKey.trim() !== "" && !apiKey.includes("YOUR_API_KEY");
+
+export const isMockMode = !isFirebaseConfigured;
+
+// --- CONFIGURAÇÃO REAL DO FIREBASE ---
+let app, auth, db, storage;
+
+if (isFirebaseConfigured) {
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  };
+  
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+}
+
+// --- BANCO DE DADOS LOCAL (MOCK) ---
+const MOCK_USERS = {
+  "admin@contractus.com": {
+    uid: "mock-admin-uid",
+    email: "admin@contractus.com",
+    name: "Administrador do Caixa",
+    role: "admin"
+  },
+  "user@contractus.com": {
+    uid: "mock-user-uid",
+    email: "user@contractus.com",
+    name: "Usuário Consulta",
+    role: "user"
+  }
+};
+
+const INITIAL_MOCK_CONTRACTS = [
+  {
+    id: "mock-contract-1",
+    fileName: "Contrato_FashionDay_BH.docx",
+    fileSize: "1.2 MB",
+    fileUrl: "mock-url-1",
+    cityCreated: "São Paulo - SP",
+    cityFashionDay: "Belo Horizonte - MG",
+    payment: 12500.00,
+    commissionBox: "Caixa Fulano",
+    uploadedBy: "mock-admin-uid",
+    uploadedAt: new Date(Date.now() - 3600000 * 24).toISOString() // 1 dia atrás
+  },
+  {
+    id: "mock-contract-2",
+    fileName: "Contrato_FashionDay_RJ.docx",
+    fileSize: "950 KB",
+    fileUrl: "mock-url-2",
+    cityCreated: "Niterói - RJ",
+    cityFashionDay: "Rio de Janeiro - RJ",
+    payment: 8400.00,
+    commissionBox: "Caixa Beltrano",
+    uploadedBy: "mock-admin-uid",
+    uploadedAt: new Date(Date.now() - 3600000 * 48).toISOString() // 2 dias atrás
+  }
+];
+
+// Carregar contratos iniciais do localStorage se não houver nada
+if (isMockMode && !localStorage.getItem("mock_contracts")) {
+  localStorage.setItem("mock_contracts", JSON.stringify(INITIAL_MOCK_CONTRACTS));
+}
+
+// Estado em memória para persistência temporária de URLs de objetos (BLOBs)
+const mockFileBlobs = {};
+
+// --- EXPORTAÇÃO DA API UNIFICADA ---
+
+// 1. Autenticação: Fazer Login
+export const login = async (email, password) => {
+  if (isMockMode) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const user = MOCK_USERS[email.toLowerCase().trim()];
+        // Senha padrão para teste: admin123 para admin, user123 para usuário comum
+        const isCorrectPassword = 
+          (email.toLowerCase().trim() === "admin@contractus.com" && password === "admin123") ||
+          (email.toLowerCase().trim() === "user@contractus.com" && password === "user123");
+
+        if (user && isCorrectPassword) {
+          localStorage.setItem("mock_session", JSON.stringify(user));
+          resolve(user);
+        } else {
+          reject(new Error("E-mail ou senha incorretos. Verifique suas credenciais."));
+        }
+      }, 800);
+    });
+  } else {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const fbUser = userCredential.user;
+    
+    // Buscar perfil do usuário para saber a role
+    const userDocRef = doc(db, 'users', fbUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (userDoc.exists()) {
+      return {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        ...userDoc.data()
+      };
+    } else {
+      // Caso não exista o documento, assume padrão 'user' para evitar bloqueios
+      return {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        name: fbUser.email.split('@')[0],
+        role: 'user'
+      };
+    }
+  }
+};
+
+// 2. Autenticação: Fazer Logout
+export const logout = async () => {
+  if (isMockMode) {
+    localStorage.removeItem("mock_session");
+    return Promise.resolve();
+  } else {
+    return signOut(auth);
+  }
+};
+
+// 3. Autenticação: Ouvinte de Estado
+export const onAuthStateChanged = (callback) => {
+  if (isMockMode) {
+    const checkAuth = () => {
+      const session = localStorage.getItem("mock_session");
+      if (session) {
+        callback(JSON.parse(session));
+      } else {
+        callback(null);
+      }
+    };
+    checkAuth();
+    // Simula alteração escutando storage
+    window.addEventListener("storage", checkAuth);
+    return () => window.removeEventListener("storage", checkAuth);
+  } else {
+    return fbOnAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        try {
+          const userDocRef = doc(db, 'users', fbUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            callback({
+              uid: fbUser.uid,
+              email: fbUser.email,
+              ...userDoc.data()
+            });
+          } else {
+            callback({
+              uid: fbUser.uid,
+              email: fbUser.email,
+              name: fbUser.email.split('@')[0],
+              role: 'user'
+            });
+          }
+        } catch (e) {
+          console.error("Erro ao obter dados do usuário:", e);
+          callback({
+            uid: fbUser.uid,
+            email: fbUser.email,
+            name: fbUser.email.split('@')[0],
+            role: 'user'
+          });
+        }
+      } else {
+        callback(null);
+      }
+    });
+  }
+};
+
+// 4. Contratos: Listar
+export const getContracts = async () => {
+  if (isMockMode) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const list = JSON.parse(localStorage.getItem("mock_contracts") || "[]");
+        // Ordenar decrescente
+        list.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        resolve(list);
+      }, 500);
+    });
+  } else {
+    const contractsCol = collection(db, 'contracts');
+    const q = query(contractsCol, orderBy('uploadedAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  }
+};
+
+// 5. Contratos: Upload
+export const uploadContract = async (file, metadata, onProgress) => {
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  if (isMockMode) {
+    return new Promise((resolve) => {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 20;
+        if (onProgress) onProgress(progress);
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          
+          // Criar uma URL de objeto local para permitir download real durante a sessão
+          const objectUrl = URL.createObjectURL(file);
+          const contractId = "mock-" + Math.random().toString(36).substring(2, 9);
+          
+          // Guardar o blob em memória para downloads subsequentes
+          mockFileBlobs[contractId] = file;
+          
+          const newContract = {
+            id: contractId,
+            fileName: file.name,
+            fileSize: formatFileSize(file.size),
+            fileUrl: objectUrl,
+            cityCreated: metadata.cityCreated,
+            cityFashionDay: metadata.cityFashionDay,
+            payment: parseFloat(metadata.payment) || 0,
+            commissionBox: metadata.commissionBox,
+            uploadedBy: metadata.uploadedBy || "mock-admin-uid",
+            uploadedAt: new Date().toISOString()
+          };
+          
+          const list = JSON.parse(localStorage.getItem("mock_contracts") || "[]");
+          list.push(newContract);
+          localStorage.setItem("mock_contracts", JSON.stringify(list));
+          
+          resolve(newContract);
+        }
+      }, 200);
+    });
+  } else {
+    // Realizar upload do arquivo no Storage
+    const fileId = Math.random().toString(36).substring(2, 11) + "_" + file.name;
+    const storageRef = ref(storage, `contracts/${fileId}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    
+    return new Promise((resolve, reject) => {
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (onProgress) onProgress(progress);
+        }, 
+        (error) => {
+          reject(error);
+        }, 
+        async () => {
+          try {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            
+            // Gravar metadados no Firestore
+            const newDoc = {
+              fileName: file.name,
+              fileSize: formatFileSize(file.size),
+              fileUrl: downloadUrl,
+              storagePath: `contracts/${fileId}`,
+              cityCreated: metadata.cityCreated,
+              cityFashionDay: metadata.cityFashionDay,
+              payment: parseFloat(metadata.payment) || 0,
+              commissionBox: metadata.commissionBox,
+              uploadedBy: metadata.uploadedBy,
+              uploadedAt: new Date().toISOString()
+            };
+            
+            const docRef = await addDoc(collection(db, 'contracts'), newDoc);
+            resolve({
+              id: docRef.id,
+              ...newDoc
+            });
+          } catch (e) {
+            reject(e);
+          }
+        }
+      );
+    });
+  }
+};
+
+// 6. Contratos: Excluir
+export const deleteContract = async (contract) => {
+  if (isMockMode) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const list = JSON.parse(localStorage.getItem("mock_contracts") || "[]");
+        const filteredList = list.filter(item => item.id !== contract.id);
+        localStorage.setItem("mock_contracts", JSON.stringify(filteredList));
+        
+        // Limpar blob da memória se existir
+        if (mockFileBlobs[contract.id]) {
+          delete mockFileBlobs[contract.id];
+        }
+        resolve();
+      }, 500);
+    });
+  } else {
+    // Excluir documento do Firestore
+    await deleteDoc(doc(db, 'contracts', contract.id));
+    
+    // Excluir arquivo do Storage
+    if (contract.storagePath) {
+      const fileRef = ref(storage, contract.storagePath);
+      await deleteObject(fileRef);
+    }
+  }
+};
+
+// Função auxiliar para baixar arquivo mock ou real
+export const downloadContractFile = (contract) => {
+  if (isMockMode) {
+    const file = mockFileBlobs[contract.id];
+    let downloadUrl = contract.fileUrl;
+    
+    // Se o ObjectURL expirou ou não está em memória (ex: após refresh), criar um Blob mock de texto
+    if (!file && (!contract.fileUrl || contract.fileUrl.startsWith("mock-url"))) {
+      const dummyContent = `Este e um arquivo simulado para o contrato: ${contract.fileName}\n` +
+                           `Cidade de Origem: ${contract.cityCreated}\n` +
+                           `Cidade do Fashion Day: ${contract.cityFashionDay}\n` +
+                           `Valor do Pagamento: R$ ${contract.payment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+                           `Caixa de Comissao: ${contract.commissionBox}\n`;
+      const blob = new Blob([dummyContent], { type: 'text/plain' });
+      downloadUrl = URL.createObjectURL(blob);
+    }
+    
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    // Forçar extensão .docx ou txt para download do mock
+    a.download = file ? contract.fileName : contract.fileName.replace(/\.docx$/, "") + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Se criamos um link blob temporário agora, revogar depois de um tempo
+    if (!file) {
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+    }
+  } else {
+    // No Firebase real, abrimos o downloadUrl em uma nova aba para iniciar o download
+    window.open(contract.fileUrl, '_blank');
+  }
+};
