@@ -293,6 +293,27 @@ export const uploadContract = async (file, metadata, onProgress) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // --- VALIDAÇÕES DE SEGURANÇA ---
+  const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+  const ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword'
+  ];
+
+  if (!file) {
+    throw new Error('Nenhum arquivo foi fornecido.');
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('Tamanho do arquivo excede o limite permitido de 25 MB.');
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    throw new Error('Formato de arquivo não permitido. Apenas arquivos PDF e Word (.docx, .doc) são aceitos.');
+  }
+  // ---------------------------------
+
   if (isMockMode) {
     return new Promise((resolve) => {
       let progress = 0;
