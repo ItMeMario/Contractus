@@ -38,24 +38,8 @@ export default function App() {
     if (!user) return;
     setLoadingContracts(true);
     try {
-      const data = await getContracts();
-      if (user.role === 'admin') {
-        setContracts(data);
-      } else {
-        const filtered = data.filter(contract => {
-          const uploadedByMe = contract.uploadedBy === user.uid;
-          const userNameLower = (user.name || '').toLowerCase();
-          const userEmailPrefixLower = (user.email ? user.email.split('@')[0] : '').toLowerCase();
-          const commissionBoxLower = (contract.commissionBox || '').toLowerCase();
-          
-          const matchesBox = commissionBoxLower && (
-            (userNameLower && commissionBoxLower.includes(userNameLower)) ||
-            (userEmailPrefixLower && commissionBoxLower.includes(userEmailPrefixLower))
-          );
-          return uploadedByMe || matchesBox;
-        });
-        setContracts(filtered);
-      }
+      const data = await getContracts(user);
+      setContracts(data);
     } catch (err) {
       console.error("Erro ao carregar contratos:", err);
       alert("Falha ao obter os contratos do banco de dados.");

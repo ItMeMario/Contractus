@@ -14,7 +14,8 @@ import {
   addDoc, 
   deleteDoc, 
   query, 
-  orderBy 
+  orderBy,
+  where 
 } from 'firebase/firestore';
 import { 
   getStorage, 
@@ -223,24 +224,62 @@ export const onAuthStateChanged = (callback) => {
 };
 
 // 4. Contratos: Listar
-export const getContracts = async () => {
+export const getContracts = async (user) => {
+  if (!user) return [];
+
   if (isMockMode) {
     return new Promise((resolve) => {
       setTimeout(() => {
         const list = JSON.parse(localStorage.getItem("mock_contracts") || "[]");
-        // Ordenar decrescente
-        list.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
-        resolve(list);
+        
+        // Se for admin, vê tudo
+        if (user.role === 'admin') {
+          list.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+          resolve(list);
+          return;
+        }
+
+        // Se for user comum, filtra no mock
+        const filtered = list.filter(contract => {
+          const uploadedByMe = contract.uploadedBy === user.uid;
+          const userNameLower = (user.name || '').toLowerCase();
+          const userEmailPrefixLower = (user.email ? user.email.split('@')[0] : '').toLowerCase();
+          const commissionBoxLower = (contract.commissionBox || '').toLowerCase();
+          
+          const matchesBox = commissionBoxLower && (
+            (userNameLower && commissionBoxLower.includes(userNameLower)) ||
+            (userEmailPrefixLower && commissionBoxLower.includes(userEmailPrefixLower))
+          );
+          return uploadedByMe || matchesBox;
+        });
+
+        filtered.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        resolve(filtered);
       }, 500);
     });
   } else {
     const contractsCol = collection(db, 'contracts');
-    const q = query(contractsCol, orderBy('uploadedAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    
+    if (user.role === 'admin') {
+      const q = query(contractsCol, orderBy('uploadedAt', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } else {
+      // Busca apenas contratos criados por este usuário no Firebase
+      const q = query(
+        contractsCol,
+        where('uploadedBy', '==', user.uid),
+        orderBy('uploadedAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    }
   }
 };
 
