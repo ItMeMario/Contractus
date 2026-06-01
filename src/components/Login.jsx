@@ -106,7 +106,9 @@ export default function Login({ onLogin, isMock }) {
               <div style={{ marginTop: '8px', fontSize: '13px' }}>
                 🔑 <strong>Admin:</strong> admin@contractus.com / <code>admin123</code>
                 <br />
-                🔑 <strong>Consulta:</strong> user@contractus.com / <code>user123</code>
+                🔑 <strong>Fulano:</strong> fulano@contractus.com / <code>fulano123</code>
+                <br />
+                🔑 <strong>Deltrano:</strong> deltrano@contractus.com / <code>deltrano123</code>
               </div>
             </div>
           </div>

@@ -62,6 +62,18 @@ const MOCK_USERS = {
     email: "user@contractus.com",
     name: "Usuário Consulta",
     role: "user"
+  },
+  "fulano@contractus.com": {
+    uid: "mock-fulano-uid",
+    email: "fulano@contractus.com",
+    name: "Fulano",
+    role: "user"
+  },
+  "deltrano@contractus.com": {
+    uid: "mock-deltrano-uid",
+    email: "deltrano@contractus.com",
+    name: "Deltrano",
+    role: "user"
   }
 };
 
@@ -86,7 +98,7 @@ const INITIAL_MOCK_CONTRACTS = [
     cityCreated: "Niterói - RJ",
     cityFashionDay: "Rio de Janeiro - RJ",
     payment: 8400.00,
-    commissionBox: "Caixa Beltrano",
+    commissionBox: "Caixa Deltrano",
     uploadedBy: "mock-admin-uid",
     uploadedAt: new Date(Date.now() - 3600000 * 48).toISOString() // 2 dias atrás
   }
@@ -108,10 +120,12 @@ export const login = async (email, password) => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const user = MOCK_USERS[email.toLowerCase().trim()];
-        // Senha padrão para teste: admin123 para admin, user123 para usuário comum
+        // Senha padrão para teste: admin123 para admin, user123 para usuário comum, etc.
         const isCorrectPassword = 
           (email.toLowerCase().trim() === "admin@contractus.com" && password === "admin123") ||
-          (email.toLowerCase().trim() === "user@contractus.com" && password === "user123");
+          (email.toLowerCase().trim() === "user@contractus.com" && password === "user123") ||
+          (email.toLowerCase().trim() === "fulano@contractus.com" && password === "fulano123") ||
+          (email.toLowerCase().trim() === "deltrano@contractus.com" && password === "deltrano123");
 
         if (user && isCorrectPassword) {
           localStorage.setItem("mock_session", JSON.stringify(user));
