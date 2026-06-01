@@ -379,7 +379,11 @@ export const uploadContract = async (file, metadata, onProgress) => {
 };
 
 // 6. Contratos: Excluir
-export const deleteContract = async (contract) => {
+export const deleteContract = async (contract, user) => {
+  if (!user || user.role !== 'admin') {
+    throw new Error("Ação não autorizada. Apenas administradores podem excluir contratos.");
+  }
+
   if (isMockMode) {
     return new Promise((resolve) => {
       setTimeout(() => {

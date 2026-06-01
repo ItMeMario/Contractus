@@ -94,7 +94,7 @@ export default function App() {
     
     if (confirmation) {
       try {
-        await deleteContract(contract);
+        await deleteContract(contract, user);
         // Atualizar lista após remoção
         setContracts(prev => prev.filter(c => c.id !== contract.id));
       } catch (err) {
