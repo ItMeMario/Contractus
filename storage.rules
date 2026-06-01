@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Função auxiliar para checar role de admin no Firestore associado
+    function isAdminInFirestore() {
+      return request.auth != null &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /contracts/{allPaths=**} {
+      // Qualquer usuário logado pode ler/baixar arquivos
+      allow read: if request.auth != null;
+      
+      // Apenas administradores podem fazer upload ou apagar arquivos
+      allow write: if request.auth != null && isAdminInFirestore();
+      allow delete: if request.auth != null && isAdminInFirestore();
+    }
+  }
+}
