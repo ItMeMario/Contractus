@@ -21,7 +21,7 @@ import {
   getStorage, 
   ref, 
   uploadBytesResumable, 
-  getDownloadURL, 
+  getBlob, 
   deleteObject 
 } from 'firebase/storage';
 
@@ -458,12 +458,22 @@ export const downloadContractFile = async (contract) => {
       setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
     }
   } else {
-    // No Firebase real, geramos a URL de download dinamicamente sob demanda
+    // No Firebase real, baixamos o arquivo como Blob usando o token de autenticação
     if (!contract.storagePath) {
       throw new Error("Erro no download: Caminho do arquivo não localizado no servidor.");
     }
     const fileRef = ref(storage, contract.storagePath);
-    const downloadUrl = await getDownloadURL(fileRef);
-    window.open(downloadUrl, '_blank');
+    const blob = await getBlob(fileRef);
+    const downloadUrl = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = contract.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Revoga o link blob temporário logo após o download
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
   }
 };
