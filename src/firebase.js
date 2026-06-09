@@ -117,6 +117,7 @@ if (import.meta.env.DEV) {
 }
 
 // --- EXPORTAÇÃO DA API UNIFICADA ---
+let authStateListeners = [];
 
 // 1. Autenticação: Fazer Login
 export const login = async (email, password) => {
@@ -135,7 +136,8 @@ export const login = async (email, password) => {
         }
 
         if (user && isCorrectPassword) {
-          localStorage.setItem("mock_session", JSON.stringify(user));
+          sessionStorage.setItem("mock_session", JSON.stringify(user));
+          authStateListeners.forEach(cb => cb(user));
           resolve(user);
         } else {
           reject(new Error("E-mail ou senha incorretos. Verifique suas credenciais."));
@@ -171,7 +173,8 @@ export const login = async (email, password) => {
 // 2. Autenticação: Fazer Logout
 export const logout = async () => {
   if (isMockMode) {
-    localStorage.removeItem("mock_session");
+    sessionStorage.removeItem("mock_session");
+    authStateListeners.forEach(cb => cb(null));
     return Promise.resolve();
   } else {
     return signOut(auth);
@@ -181,18 +184,19 @@ export const logout = async () => {
 // 3. Autenticação: Ouvinte de Estado
 export const onAuthStateChanged = (callback) => {
   if (isMockMode) {
-    const checkAuth = () => {
-      const session = localStorage.getItem("mock_session");
-      if (session) {
-        callback(JSON.parse(session));
-      } else {
-        callback(null);
-      }
+    authStateListeners.push(callback);
+    
+    // Initial check
+    const session = sessionStorage.getItem("mock_session");
+    if (session) {
+      callback(JSON.parse(session));
+    } else {
+      callback(null);
+    }
+    
+    return () => {
+      authStateListeners = authStateListeners.filter(cb => cb !== callback);
     };
-    checkAuth();
-    // Simula alteração escutando storage
-    window.addEventListener("storage", checkAuth);
-    return () => window.removeEventListener("storage", checkAuth);
   } else {
     return fbOnAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
