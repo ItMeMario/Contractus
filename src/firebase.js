@@ -29,7 +29,7 @@ import {
 const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
 const isFirebaseConfigured = apiKey && apiKey.trim() !== "" && !apiKey.includes("YOUR_API_KEY");
 
-export const isMockMode = !isFirebaseConfigured;
+export const isMockMode = import.meta.env.DEV && !isFirebaseConfigured;
 
 // --- CONFIGURAÇÃO REAL DO FIREBASE ---
 let app, auth, db, storage;
@@ -51,67 +51,70 @@ if (isFirebaseConfigured) {
 }
 
 // --- BANCO DE DADOS LOCAL (MOCK) ---
-const MOCK_USERS = {
-  "admin@contractus.com": {
-    uid: "mock-admin-uid",
-    email: "admin@contractus.com",
-    name: "Administrador do Caixa",
-    role: "admin"
-  },
-  "user@contractus.com": {
-    uid: "mock-user-uid",
-    email: "user@contractus.com",
-    name: "Usuário Consulta",
-    role: "user"
-  },
-  "fulano@contractus.com": {
-    uid: "mock-fulano-uid",
-    email: "fulano@contractus.com",
-    name: "Fulano",
-    role: "user"
-  },
-  "deltrano@contractus.com": {
-    uid: "mock-deltrano-uid",
-    email: "deltrano@contractus.com",
-    name: "Deltrano",
-    role: "user"
-  }
-};
-
-const INITIAL_MOCK_CONTRACTS = [
-  {
-    id: "mock-contract-1",
-    fileName: "Contrato_FashionDay_BH.docx",
-    fileSize: "1.2 MB",
-    fileUrl: "mock-url-1",
-    cityCreated: "São Paulo - SP",
-    cityFashionDay: "Belo Horizonte - MG",
-    payment: 12500.00,
-    commissionBox: "Caixa Fulano",
-    uploadedBy: "mock-admin-uid",
-    uploadedAt: new Date(Date.now() - 3600000 * 24).toISOString() // 1 dia atrás
-  },
-  {
-    id: "mock-contract-2",
-    fileName: "Contrato_FashionDay_RJ.docx",
-    fileSize: "950 KB",
-    fileUrl: "mock-url-2",
-    cityCreated: "Niterói - RJ",
-    cityFashionDay: "Rio de Janeiro - RJ",
-    payment: 8400.00,
-    commissionBox: "Caixa Deltrano",
-    uploadedBy: "mock-admin-uid",
-    uploadedAt: new Date(Date.now() - 3600000 * 48).toISOString() // 2 dias atrás
-  }
-];
-
-// Carregar contratos iniciais do localStorage se não houver nada
-if (isMockMode && !localStorage.getItem("mock_contracts")) {
-  localStorage.setItem("mock_contracts", JSON.stringify(INITIAL_MOCK_CONTRACTS));
-}
-
-// Estado em memória para persistência temporária de URLs de objetos (BLOBs)
+let MOCK_USERS = {};
+let INITIAL_MOCK_CONTRACTS = [];
 const mockFileBlobs = {};
+
+if (import.meta.env.DEV) {
+  MOCK_USERS = {
+    "admin@contractus.com": {
+      uid: "mock-admin-uid",
+      email: "admin@contractus.com",
+      name: "Administrador do Caixa",
+      role: "admin"
+    },
+    "user@contractus.com": {
+      uid: "mock-user-uid",
+      email: "user@contractus.com",
+      name: "Usuário Consulta",
+      role: "user"
+    },
+    "fulano@contractus.com": {
+      uid: "mock-fulano-uid",
+      email: "fulano@contractus.com",
+      name: "Fulano",
+      role: "user"
+    },
+    "deltrano@contractus.com": {
+      uid: "mock-deltrano-uid",
+      email: "deltrano@contractus.com",
+      name: "Deltrano",
+      role: "user"
+    }
+  };
+
+  INITIAL_MOCK_CONTRACTS = [
+    {
+      id: "mock-contract-1",
+      fileName: "Contrato_FashionDay_BH.docx",
+      fileSize: "1.2 MB",
+      fileUrl: "mock-url-1",
+      cityCreated: "São Paulo - SP",
+      cityFashionDay: "Belo Horizonte - MG",
+      payment: 12500.00,
+      commissionBox: "Caixa Fulano",
+      uploadedBy: "mock-admin-uid",
+      uploadedAt: new Date(Date.now() - 3600000 * 24).toISOString() // 1 dia atrás
+    },
+    {
+      id: "mock-contract-2",
+      fileName: "Contrato_FashionDay_RJ.docx",
+      fileSize: "950 KB",
+      fileUrl: "mock-url-2",
+      cityCreated: "Niterói - RJ",
+      cityFashionDay: "Rio de Janeiro - RJ",
+      payment: 8400.00,
+      commissionBox: "Caixa Deltrano",
+      uploadedBy: "mock-admin-uid",
+      uploadedAt: new Date(Date.now() - 3600000 * 48).toISOString() // 2 dias atrás
+    }
+  ];
+
+  // Carregar contratos iniciais do localStorage se não houver nada
+  if (isMockMode && !localStorage.getItem("mock_contracts")) {
+    localStorage.setItem("mock_contracts", JSON.stringify(INITIAL_MOCK_CONTRACTS));
+  }
+}
 
 // --- EXPORTAÇÃO DA API UNIFICADA ---
 
@@ -122,11 +125,14 @@ export const login = async (email, password) => {
       setTimeout(() => {
         const user = MOCK_USERS[email.toLowerCase().trim()];
         // Senha padrão para teste: admin123 para admin, user123 para usuário comum, etc.
-        const isCorrectPassword = 
-          (email.toLowerCase().trim() === "admin@contractus.com" && password === "admin123") ||
-          (email.toLowerCase().trim() === "user@contractus.com" && password === "user123") ||
-          (email.toLowerCase().trim() === "fulano@contractus.com" && password === "fulano123") ||
-          (email.toLowerCase().trim() === "deltrano@contractus.com" && password === "deltrano123");
+        let isCorrectPassword = false;
+        if (import.meta.env.DEV) {
+          isCorrectPassword = 
+            (email.toLowerCase().trim() === "admin@contractus.com" && password === "admin123") ||
+            (email.toLowerCase().trim() === "user@contractus.com" && password === "user123") ||
+            (email.toLowerCase().trim() === "fulano@contractus.com" && password === "fulano123") ||
+            (email.toLowerCase().trim() === "deltrano@contractus.com" && password === "deltrano123");
+        }
 
         if (user && isCorrectPassword) {
           localStorage.setItem("mock_session", JSON.stringify(user));
