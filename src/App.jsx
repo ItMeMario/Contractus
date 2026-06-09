@@ -7,7 +7,8 @@ import {
   getContracts, 
   uploadContract, 
   deleteContract, 
-  downloadContractFile 
+  downloadContractFile,
+  logger
 } from './firebase';
 
 import Navbar from './components/Navbar';
@@ -41,7 +42,7 @@ export default function App() {
       const data = await getContracts(user);
       setContracts(data);
     } catch (err) {
-      console.error("Erro ao carregar contratos:", err);
+      logger.error("Erro ao carregar contratos:", err);
       alert("Falha ao obter os contratos do banco de dados.");
     } finally {
       setLoadingContracts(false);
@@ -66,7 +67,7 @@ export default function App() {
       try {
         await logout();
       } catch (err) {
-        console.error("Erro ao deslogar:", err);
+        logger.error("Erro ao deslogar:", err);
       }
     }
   };
@@ -98,7 +99,7 @@ export default function App() {
         // Atualizar lista após remoção
         setContracts(prev => prev.filter(c => c.id !== contract.id));
       } catch (err) {
-        console.error("Erro ao excluir contrato:", err);
+        logger.error("Erro ao excluir contrato:", err);
         alert("Não foi possível excluir o contrato. Tente novamente.");
       }
     }
@@ -108,7 +109,7 @@ export default function App() {
     try {
       await downloadContractFile(contract);
     } catch (err) {
-      console.error("Erro no download:", err);
+      logger.error("Erro no download:", err);
       alert("Erro ao tentar baixar o arquivo.");
     }
   };

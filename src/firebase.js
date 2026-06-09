@@ -31,6 +31,19 @@ const isFirebaseConfigured = apiKey && apiKey.trim() !== "" && !apiKey.includes(
 
 export const isMockMode = import.meta.env.DEV && !isFirebaseConfigured;
 
+// Wrapper de Logging Seguro (Desativado em Produção)
+export const logger = {
+  log: (...args) => {
+    if (import.meta.env.DEV) console.log(...args);
+  },
+  error: (...args) => {
+    if (import.meta.env.DEV) console.error(...args);
+  },
+  warn: (...args) => {
+    if (import.meta.env.DEV) console.warn(...args);
+  }
+};
+
 // --- CONFIGURAÇÃO REAL DO FIREBASE ---
 let app, auth, db, storage;
 
@@ -145,27 +158,32 @@ export const login = async (email, password) => {
       }, 800);
     });
   } else {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const fbUser = userCredential.user;
-    
-    // Buscar perfil do usuário para saber a role
-    const userDocRef = doc(db, 'users', fbUser.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (userDoc.exists()) {
-      return {
-        uid: fbUser.uid,
-        email: fbUser.email,
-        ...userDoc.data()
-      };
-    } else {
-      // Caso não exista o documento, assume padrão 'user' para evitar bloqueios
-      return {
-        uid: fbUser.uid,
-        email: fbUser.email,
-        name: fbUser.email.split('@')[0],
-        role: 'user'
-      };
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const fbUser = userCredential.user;
+      
+      // Buscar perfil do usuário para saber a role
+      const userDocRef = doc(db, 'users', fbUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        return {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          ...userDoc.data()
+        };
+      } else {
+        // Caso não exista o documento, assume padrão 'user' para evitar bloqueios
+        return {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          name: fbUser.email.split('@')[0],
+          role: 'user'
+        };
+      }
+    } catch (error) {
+      logger.error("Erro no login:", error);
+      throw new Error("E-mail ou senha incorretos. Verifique suas credenciais.");
     }
   }
 };
@@ -218,7 +236,7 @@ export const onAuthStateChanged = (callback) => {
             });
           }
         } catch (e) {
-          console.error("Erro ao obter dados do usuário:", e);
+          logger.error("Erro ao obter dados do usuário:", e);
           callback({
             uid: fbUser.uid,
             email: fbUser.email,

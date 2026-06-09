@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, UploadCloud, FileText, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { logger } from '../firebase';
 
 export default function UploadModal({ isOpen, onClose, onUpload }) {
   const [file, setFile] = useState(null);
@@ -81,7 +82,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }) {
 
       setStatus('success');
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setStatus('error');
       setErrorMessage(err.message || 'Falha ao fazer upload. Verifique sua conexão.');
       setUploading(false);
