@@ -369,13 +369,10 @@ export const uploadContract = async (file, metadata, onProgress) => {
         }, 
         async () => {
           try {
-            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            
-            // Gravar metadados no Firestore
+            // Gravar metadados no Firestore (Sem persistir a fileUrl pública permanente)
             const newDoc = {
               fileName: file.name,
               fileSize: formatFileSize(file.size),
-              fileUrl: downloadUrl,
               storagePath: `contracts/${fileId}`,
               cityCreated: metadata.cityCreated,
               cityFashionDay: metadata.cityFashionDay,
@@ -431,8 +428,8 @@ export const deleteContract = async (contract, user) => {
   }
 };
 
-// Função auxiliar para baixar arquivo mock ou real
-export const downloadContractFile = (contract) => {
+// Função auxiliar para baixar arquivo mock ou real (tornada assíncrona)
+export const downloadContractFile = async (contract) => {
   if (isMockMode) {
     const file = mockFileBlobs[contract.id];
     let downloadUrl = contract.fileUrl;
@@ -461,7 +458,12 @@ export const downloadContractFile = (contract) => {
       setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
     }
   } else {
-    // No Firebase real, abrimos o downloadUrl em uma nova aba para iniciar o download
-    window.open(contract.fileUrl, '_blank');
+    // No Firebase real, geramos a URL de download dinamicamente sob demanda
+    if (!contract.storagePath) {
+      throw new Error("Erro no download: Caminho do arquivo não localizado no servidor.");
+    }
+    const fileRef = ref(storage, contract.storagePath);
+    const downloadUrl = await getDownloadURL(fileRef);
+    window.open(downloadUrl, '_blank');
   }
 };

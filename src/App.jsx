@@ -104,9 +104,9 @@ export default function App() {
     }
   };
 
-  const handleDownload = (contract) => {
+  const handleDownload = async (contract) => {
     try {
-      downloadContractFile(contract);
+      await downloadContractFile(contract);
     } catch (err) {
       console.error("Erro no download:", err);
       alert("Erro ao tentar baixar o arquivo.");
