@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, FolderLock, ShieldAlert, KeyRound } from 'lucide-react';
 
 export default function Login({ onLogin, isMock }) {
@@ -7,9 +7,23 @@ export default function Login({ onLogin, isMock }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (lockoutTimeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutTimeLeft]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (lockoutTimeLeft > 0) {
+      setError(`Muitas tentativas de login. Aguarde ${lockoutTimeLeft}s.`);
+      return;
+    }
     if (!email || !password) {
       setError('Por favor, preencha todos os campos.');
       return;
@@ -20,8 +34,16 @@ export default function Login({ onLogin, isMock }) {
 
     try {
       await onLogin(email, password);
+      setAttempts(0);
     } catch (err) {
-      setError(err.message || 'Falha ao entrar. Tente novamente.');
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      if (newAttempts >= 5) {
+        setLockoutTimeLeft(30);
+        setError('Muitas tentativas incorretas. O login foi bloqueado por 30 segundos.');
+      } else {
+        setError(err.message || 'Falha ao entrar. Tente novamente.');
+      }
       setLoading(false);
     }
   };
@@ -92,9 +114,16 @@ export default function Login({ onLogin, isMock }) {
             </div>
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            <KeyRound size={20} />
-            <span>{loading ? 'Entrando...' : 'Entrar no Sistema'}</span>
+          <button type="submit" className="btn-primary" disabled={loading || lockoutTimeLeft > 0}>
+            {lockoutTimeLeft > 0 ? <ShieldAlert size={20} /> : <KeyRound size={20} />}
+            <span>
+              {lockoutTimeLeft > 0 
+                ? `Acesso Bloqueado (${lockoutTimeLeft}s)` 
+                : loading 
+                  ? 'Entrando...' 
+                  : 'Entrar no Sistema'
+              }
+            </span>
           </button>
         </form>
 
