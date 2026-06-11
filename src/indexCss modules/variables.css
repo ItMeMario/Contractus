@@ -4,6 +4,9 @@
    ========================================================================== */
 
 :root {
+  /* Acessibilidade */
+  --scale-factor: 1.0;
+
   /* Cores Principais */
   --primary: #5f5af6;
   --primary-hover: #4e48ec;

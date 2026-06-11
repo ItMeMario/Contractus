@@ -31,3 +31,75 @@ h1, h2, h3, h4 {
   flex-direction: column;
   min-height: 100vh;
 }
+
+/* Painel de Acessibilidade */
+.accessibility-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.control-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.control-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-scale {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border: 1px solid var(--border-glass);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-scale:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-scale.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
+/* Container de Acessibilidade na página de Login (Posicionamento flutuante) */
+.login-accessibility-wrapper {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 100;
+}
+
+@media (max-width: 640px) {
+  .login-accessibility-wrapper {
+    position: relative;
+    top: 0;
+    right: 0;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+}

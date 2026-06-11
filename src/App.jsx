@@ -25,6 +25,15 @@ export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [viewedContractIds, setViewedContractIds] = useState([]);
+  const [scale, setScale] = useState(() => {
+    const saved = localStorage.getItem('contractus-scale');
+    return saved ? parseFloat(saved) : 1.0;
+  });
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--scale-factor', scale);
+    localStorage.setItem('contractus-scale', scale);
+  }, [scale]);
 
   // 1. Monitorar o estado de autenticação do usuário
   useEffect(() => {
@@ -162,7 +171,7 @@ export default function App() {
             <span>MODO DE SIMULAÇÃO LOCAL (DADOS OFFLINE)</span>
           </div>
         )}
-        <Login onLogin={handleLogin} isMock={isMockMode} />
+        <Login onLogin={handleLogin} isMock={isMockMode} scale={scale} setScale={setScale} />
       </div>
     );
   }
@@ -178,7 +187,7 @@ export default function App() {
         </div>
       )}
 
-      <Navbar user={user} onLogout={handleLogout} />
+      <Navbar user={user} onLogout={handleLogout} scale={scale} setScale={setScale} />
 
       <Dashboard 
         user={user}

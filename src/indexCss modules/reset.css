@@ -15,6 +15,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  zoom: var(--scale-factor, 1.0);
+}
+
+/* Fallback de escala para Firefox */
+@-moz-document url-prefix() {
+  body {
+    transform: scale(var(--scale-factor, 1.0));
+    transform-origin: top center;
+    width: calc(100% / var(--scale-factor, 1.0));
+    min-height: calc(100vh / var(--scale-factor, 1.0));
+  }
 }
 
 button, input, select {

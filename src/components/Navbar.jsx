@@ -1,7 +1,8 @@
 import React from 'react';
 import { FolderLock, LogOut } from 'lucide-react';
+import AccessibilityControls from './AccessibilityControls';
 
-export default function Navbar({ user, onLogout }) {
+export default function Navbar({ user, onLogout, scale, setScale }) {
   if (!user) return null;
 
   return (
@@ -10,6 +11,8 @@ export default function Navbar({ user, onLogout }) {
         <FolderLock size={32} strokeWidth={2.5} />
         <span>Contractus</span>
       </a>
+
+      <AccessibilityControls scale={scale} setScale={setScale} />
       
       <div className="nav-user">
         <div className="user-info">

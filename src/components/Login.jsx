@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, FolderLock, ShieldAlert, KeyRound } from 'lucide-react';
+import AccessibilityControls from './AccessibilityControls';
 
-export default function Login({ onLogin, isMock }) {
+export default function Login({ onLogin, isMock, scale, setScale }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -50,6 +51,9 @@ export default function Login({ onLogin, isMock }) {
 
   return (
     <div className="login-wrapper">
+      <div className="login-accessibility-wrapper">
+        <AccessibilityControls scale={scale} setScale={setScale} />
+      </div>
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
