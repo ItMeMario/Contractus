@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Componente: Dashboard Principal
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  padding: 40px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.dashboard-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard-title h1 {
+  font-size: 36px;
+  font-weight: 800;
+}
+
+.dashboard-title p {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+/* Botão Adicionar Contrato (Grande e Chamativo) */
+.btn-upload-trigger {
+  padding: 16px 24px;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  transition: var(--transition-smooth);
+}
+
+.btn-upload-trigger:hover {
+  background: var(--primary-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+/* Seção de Filtros (Ultra intuitiva) */
+.filters-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 14px 14px 44px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: 15px;
+  transition: var(--transition-smooth);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.filter-select-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 14px 40px 14px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-size: 15px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.btn-clear-filters {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border: 1px solid var(--border-glass);
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition-smooth);
+}
+
+.btn-clear-filters:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Grid de Contratos */
+.contracts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 480px) {
+  .contracts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contract-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.contract-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(95, 90, 246, 0.3);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(95, 90, 246, 0.05);
+}
+
+.contract-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.contract-file-icon {
+  background: rgba(95, 90, 246, 0.1);
+  color: var(--primary);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contract-file-info {
+  flex: 1;
+  min-width: 0; /* Permite truncar texto longo */
+}
+
+.contract-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.contract-size {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Grid de Metadados dentro do Card */
+.contract-metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px 0;
+}
+
+.metadata-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metadata-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.metadata-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metadata-value.payment-highlight {
+  color: #a7f3d0; /* Verde claro premium */
+  font-weight: 700;
+}
+
+.metadata-value.box-highlight {
+  color: #c7d2fe; /* Azul claro premium */
+  font-weight: 700;
+}
+
+/* Ações do Card */
+.contract-card-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-download {
+  flex: 1;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition-smooth);
+}
+
+.btn-download:hover {
+  background: var(--primary-hover);
+}
+
+.btn-delete-contract {
+  background: rgba(244, 63, 94, 0.1);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.btn-delete-contract:hover {
+  background: var(--error);
+  color: var(--text-inverse);
+  border-color: var(--error);
+}
+
+/* Estado de Lista Vazia */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-glass);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.empty-state svg {
+  color: var(--text-muted);
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  max-width: 400px;
+}

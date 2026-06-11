@@ -1,0 +1,62 @@
+/* Badges e Botões de Visualização */
+.view-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 99px;
+  width: fit-content;
+}
+
+.status-unread {
+  background: rgba(95, 90, 246, 0.12);
+  color: #a5b4fc;
+  border: 1px solid rgba(95, 90, 246, 0.25);
+  box-shadow: 0 0 10px rgba(95, 90, 246, 0.08);
+}
+
+.status-unread::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--primary);
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+.status-read {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-toggle-view {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border: 1px solid var(--border-glass);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.btn-toggle-view:hover {
+  background: rgba(95, 90, 246, 0.1);
+  color: #a5b4fc;
+  border-color: rgba(95, 90, 246, 0.3);
+}
+
+.btn-toggle-view.is-viewed:hover {
+  background: rgba(244, 63, 94, 0.05);
+  color: #fda4af;
+  border-color: rgba(244, 63, 94, 0.2);
+}

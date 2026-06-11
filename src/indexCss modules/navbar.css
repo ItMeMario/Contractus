@@ -1,0 +1,92 @@
+/* ==========================================================================
+   Componente: Navbar
+   ========================================================================== */
+.navbar {
+  background: rgba(17, 24, 39, 0.8);
+  border-bottom: 1px solid var(--border-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--text-main);
+}
+
+.nav-brand svg {
+  color: var(--primary);
+  filter: drop-shadow(0 0 6px var(--primary));
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.user-role-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-top: 2px;
+}
+
+.role-admin {
+  background: rgba(16, 185, 129, 0.1);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.role-user {
+  background: rgba(95, 90, 246, 0.1);
+  color: #c7d2fe;
+  border: 1px solid rgba(95, 90, 246, 0.3);
+}
+
+.btn-logout {
+  background: rgba(244, 63, 94, 0.1);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition-smooth);
+}
+
+.btn-logout:hover {
+  background: var(--error);
+  color: var(--text-inverse);
+  border-color: var(--error);
+}
