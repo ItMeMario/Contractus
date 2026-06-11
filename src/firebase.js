@@ -126,9 +126,85 @@ if (import.meta.env.DEV) {
     }
   ];
 
+  const initializeMockAuditLogs = (force = false) => {
+    if (force || !localStorage.getItem("mock_audit_logs")) {
+      const initialLogs = [
+        {
+          id: "mock-log-1",
+          action: "CONTRACT_UPLOAD",
+          timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+          userId: "mock-admin-uid",
+          userName: "Administrador do Caixa",
+          userEmail: "admin@contractus.com",
+          details: {
+            contractId: "mock-contract-1",
+            fileName: "Contrato_FashionDay_BH.docx",
+            fileSize: "1.2 MB",
+            payment: 12500.00,
+            commissionBox: "Caixa Fulano"
+          }
+        },
+        {
+          id: "mock-log-2",
+          action: "CONTRACT_UPLOAD",
+          timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
+          userId: "mock-admin-uid",
+          userName: "Administrador do Caixa",
+          userEmail: "admin@contractus.com",
+          details: {
+            contractId: "mock-contract-2",
+            fileName: "Contrato_FashionDay_RJ.docx",
+            fileSize: "950 KB",
+            payment: 8400.00,
+            commissionBox: "Caixa Deltrano"
+          }
+        },
+        {
+          id: "mock-log-3",
+          action: "LOGIN",
+          timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
+          userId: "mock-user-uid",
+          userName: "Usuário Consulta",
+          userEmail: "user@contractus.com",
+          details: {}
+        },
+        {
+          id: "mock-log-4",
+          action: "CONTRACT_VIEW_TOGGLE",
+          timestamp: new Date(Date.now() - 3600000 * 11.5).toISOString(),
+          userId: "mock-user-uid",
+          userName: "Usuário Consulta",
+          userEmail: "user@contractus.com",
+          details: {
+            contractId: "mock-contract-1",
+            fileName: "Contrato_FashionDay_BH.docx",
+            status: "viewed"
+          }
+        },
+        {
+          id: "mock-log-5",
+          action: "CONTRACT_DOWNLOAD",
+          timestamp: new Date(Date.now() - 3600000 * 11).toISOString(),
+          userId: "mock-user-uid",
+          userName: "Usuário Consulta",
+          userEmail: "user@contractus.com",
+          details: {
+            contractId: "mock-contract-1",
+            fileName: "Contrato_FashionDay_BH.docx"
+          }
+        }
+      ];
+      localStorage.setItem("mock_audit_logs", JSON.stringify(initialLogs));
+    }
+  };
+
   // Carregar contratos iniciais do localStorage se não houver nada
   if (isMockMode && !localStorage.getItem("mock_contracts")) {
     localStorage.setItem("mock_contracts", JSON.stringify(INITIAL_MOCK_CONTRACTS));
+  }
+  
+  if (isMockMode) {
+    initializeMockAuditLogs();
   }
 }
 
@@ -558,3 +634,99 @@ export const toggleContractViewed = async (user, contractId, currentStatus) => {
     return updatedDoc.data()?.viewedContracts || [];
   }
 };
+
+// 8. Logs de Auditoria: Adicionar Evento
+export const addAuditLog = async (user, action, details = {}) => {
+  if (!user) return null;
+
+  const logEntry = {
+    action,
+    details,
+    timestamp: new Date().toISOString(),
+    userId: user.uid,
+    userName: user.name || user.email.split('@')[0],
+    userEmail: user.email
+  };
+
+  if (isMockMode) {
+    const logs = JSON.parse(localStorage.getItem("mock_audit_logs") || "[]");
+    logEntry.id = "mock-log-" + Math.random().toString(36).substring(2, 9);
+    logs.push(logEntry);
+    localStorage.setItem("mock_audit_logs", JSON.stringify(logs));
+    logger.log("Audit log mock adicionado:", logEntry);
+    return logEntry;
+  } else {
+    try {
+      const docRef = await addDoc(collection(db, 'audit_logs'), logEntry);
+      logger.log("Audit log Firebase adicionado com ID:", docRef.id);
+      return { id: docRef.id, ...logEntry };
+    } catch (e) {
+      logger.error("Erro ao adicionar audit log no Firebase:", e);
+      throw e;
+    }
+  }
+};
+
+// 9. Logs de Auditoria: Buscar todos
+export const getAuditLogs = async () => {
+  if (isMockMode) {
+    const logs = JSON.parse(localStorage.getItem("mock_audit_logs") || "[]");
+    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return logs;
+  } else {
+    try {
+      const auditCol = collection(db, 'audit_logs');
+      const q = query(auditCol, orderBy('timestamp', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (e) {
+      logger.error("Erro ao buscar audit logs no Firebase:", e);
+      throw e;
+    }
+  }
+};
+
+// 10. Logs de Auditoria: Limpar logs locais (Apenas Modo Mock)
+export const clearMockAuditLogs = async () => {
+  if (isMockMode) {
+    localStorage.removeItem("mock_audit_logs");
+    // Chamamos a função de inicialização interna para gerar logs padrão novamente
+    const initialLogs = [
+      {
+        id: "mock-log-1",
+        action: "CONTRACT_UPLOAD",
+        timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+        userId: "mock-admin-uid",
+        userName: "Administrador do Caixa",
+        userEmail: "admin@contractus.com",
+        details: {
+          contractId: "mock-contract-1",
+          fileName: "Contrato_FashionDay_BH.docx",
+          fileSize: "1.2 MB",
+          payment: 12500.00,
+          commissionBox: "Caixa Fulano"
+        }
+      },
+      {
+        id: "mock-log-2",
+        action: "CONTRACT_UPLOAD",
+        timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
+        userId: "mock-admin-uid",
+        userName: "Administrador do Caixa",
+        userEmail: "admin@contractus.com",
+        details: {
+          contractId: "mock-contract-2",
+          fileName: "Contrato_FashionDay_RJ.docx",
+          fileSize: "950 KB",
+          payment: 8400.00,
+          commissionBox: "Caixa Deltrano"
+        }
+      }
+    ];
+    localStorage.setItem("mock_audit_logs", JSON.stringify(initialLogs));
+  }
+};
+

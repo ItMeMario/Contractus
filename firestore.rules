@@ -37,5 +37,15 @@ service cloud.firestore {
       allow update: if request.auth != null && isAdmin();
       allow delete: if request.auth != null && isAdmin();
     }
+
+    // Logs de auditoria:
+    // - Leitura: Apenas Admins
+    // - Criação: Qualquer usuário autenticado
+    // - Atualização/Deleção: Bloqueado (Banco de dados de auditoria imutável)
+    match /audit_logs/{logId} {
+      allow read: if request.auth != null && isAdmin();
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
   }
 }
