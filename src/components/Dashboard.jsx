@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X } from 'lucide-react';
+import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X, Eye, EyeOff } from 'lucide-react';
 
 export default function Dashboard({ 
   user, 
   contracts, 
+  viewedContractIds = [],
+  onToggleView,
   onDownload, 
   onDelete, 
   onOpenUploadModal, 
@@ -14,6 +16,7 @@ export default function Dashboard({
   const [filterCityCreated, setFilterCityCreated] = useState('');
   const [filterCityFashion, setFilterCityFashion] = useState('');
   const [filterCommissionBox, setFilterCommissionBox] = useState('');
+  const [filterViewStatus, setFilterViewStatus] = useState('');
 
   // Obter listas únicas para os seletores de filtros
   const uniqueCitiesCreated = useMemo(() => {
@@ -31,7 +34,7 @@ export default function Dashboard({
     return [...new Set(list)].sort();
   }, [contracts]);
 
-  // Filtrar contratos de acordo com busca e seletores
+  // Filtrar contratos de acordo com busca, seletores e status de visualização
   const filteredContracts = useMemo(() => {
     return contracts.filter(contract => {
       const matchesSearch = 
@@ -44,17 +47,24 @@ export default function Dashboard({
       const matchesCityFashion = !filterCityFashion || contract.cityFashionDay === filterCityFashion;
       const matchesCommission = !filterCommissionBox || contract.commissionBox === filterCommissionBox;
 
-      return matchesSearch && matchesCityCreated && matchesCityFashion && matchesCommission;
-    });
-  }, [contracts, search, filterCityCreated, filterCityFashion, filterCommissionBox]);
+      const isViewed = viewedContractIds.includes(contract.id);
+      const matchesViewStatus = 
+        !filterViewStatus || 
+        (filterViewStatus === 'viewed' && isViewed) || 
+        (filterViewStatus === 'unviewed' && !isViewed);
 
-  const hasActiveFilters = search || filterCityCreated || filterCityFashion || filterCommissionBox;
+      return matchesSearch && matchesCityCreated && matchesCityFashion && matchesCommission && matchesViewStatus;
+    });
+  }, [contracts, search, filterCityCreated, filterCityFashion, filterCommissionBox, filterViewStatus, viewedContractIds]);
+
+  const hasActiveFilters = search || filterCityCreated || filterCityFashion || filterCommissionBox || filterViewStatus;
 
   const handleClearFilters = () => {
     setSearch('');
     setFilterCityCreated('');
     setFilterCityFashion('');
     setFilterCommissionBox('');
+    setFilterViewStatus('');
   };
 
   const formatCurrency = (value) => {
@@ -109,6 +119,20 @@ export default function Dashboard({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+          </div>
+
+          {/* Filtro: Status de Visualização */}
+          <div className="filter-select-container">
+            <select
+              className="filter-select"
+              value={filterViewStatus}
+              onChange={(e) => setFilterViewStatus(e.target.value)}
+            >
+              <option value="">Status (Todos)</option>
+              <option value="unviewed">Não Visualizados</option>
+              <option value="viewed">Visualizados</option>
+            </select>
+            <ChevronDown size={16} className="select-arrow" />
           </div>
 
           {/* Filtro: Cidade Feito */}
@@ -198,10 +222,15 @@ export default function Dashboard({
                   <FileText size={24} />
                 </div>
                 <div className="contract-file-info">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span className="contract-size">{contract.fileSize}</span>
+                    <span className={`view-status-badge ${viewedContractIds.includes(contract.id) ? 'status-read' : 'status-unread'}`}>
+                      {viewedContractIds.includes(contract.id) ? 'Visualizado' : 'Não Lido'}
+                    </span>
+                  </div>
                   <h3 className="contract-name" title={contract.fileName}>
                     {contract.fileName}
                   </h3>
-                  <span className="contract-size">{contract.fileSize}</span>
                 </div>
               </div>
 
@@ -246,6 +275,14 @@ export default function Dashboard({
                   >
                     <Download size={18} />
                     <span>Baixar Contrato</span>
+                  </button>
+
+                  <button
+                    className={`btn-toggle-view ${viewedContractIds.includes(contract.id) ? 'is-viewed' : ''}`}
+                    onClick={() => onToggleView(contract)}
+                    title={viewedContractIds.includes(contract.id) ? "Marcar como não visualizado" : "Marcar como visualizado"}
+                  >
+                    {viewedContractIds.includes(contract.id) ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
 
                   {user.role === 'admin' && (

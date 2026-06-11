@@ -8,6 +8,7 @@ import {
   uploadContract, 
   deleteContract, 
   downloadContractFile,
+  toggleContractViewed,
   logger
 } from './firebase';
 
@@ -23,6 +24,7 @@ export default function App() {
   const [loadingContracts, setLoadingContracts] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [appReady, setAppReady] = useState(false);
+  const [viewedContractIds, setViewedContractIds] = useState([]);
 
   // 1. Monitorar o estado de autenticação do usuário
   useEffect(() => {
@@ -51,9 +53,11 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
+      setViewedContractIds(user.viewedContracts || []);
       fetchContracts();
     } else {
       setContracts([]);
+      setViewedContractIds([]);
     }
   }, [user]);
 
@@ -108,9 +112,24 @@ export default function App() {
   const handleDownload = async (contract) => {
     try {
       await downloadContractFile(contract);
+      if (!viewedContractIds.includes(contract.id)) {
+        const updated = await toggleContractViewed(user, contract.id, false);
+        setViewedContractIds(updated);
+      }
     } catch (err) {
       logger.error("Erro no download:", err);
       alert("Erro ao tentar baixar o arquivo.");
+    }
+  };
+
+  const handleToggleView = async (contract) => {
+    if (!user) return;
+    const isCurrentlyViewed = viewedContractIds.includes(contract.id);
+    try {
+      const updated = await toggleContractViewed(user, contract.id, isCurrentlyViewed);
+      setViewedContractIds(updated);
+    } catch (err) {
+      logger.error("Erro ao alternar status de visualização:", err);
     }
   };
 
@@ -164,6 +183,8 @@ export default function App() {
       <Dashboard 
         user={user}
         contracts={contracts}
+        viewedContractIds={viewedContractIds}
+        onToggleView={handleToggleView}
         onDownload={handleDownload}
         onDelete={handleDelete}
         onOpenUploadModal={() => setIsUploadOpen(true)}

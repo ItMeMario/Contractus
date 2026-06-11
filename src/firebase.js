@@ -15,7 +15,10 @@ import {
   deleteDoc, 
   query, 
   orderBy,
-  where 
+  where,
+  setDoc,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 import { 
   getStorage, 
@@ -149,6 +152,8 @@ export const login = async (email, password) => {
         }
 
         if (user && isCorrectPassword) {
+          const key = `viewed_contracts_${user.uid}`;
+          user.viewedContracts = JSON.parse(localStorage.getItem(key) || "[]");
           sessionStorage.setItem("mock_session", JSON.stringify(user));
           authStateListeners.forEach(cb => cb(user));
           resolve(user);
@@ -207,7 +212,10 @@ export const onAuthStateChanged = (callback) => {
     // Initial check
     const session = sessionStorage.getItem("mock_session");
     if (session) {
-      callback(JSON.parse(session));
+      const user = JSON.parse(session);
+      const key = `viewed_contracts_${user.uid}`;
+      user.viewedContracts = JSON.parse(localStorage.getItem(key) || "[]");
+      callback(user);
     } else {
       callback(null);
     }
@@ -222,17 +230,20 @@ export const onAuthStateChanged = (callback) => {
           const userDocRef = doc(db, 'users', fbUser.uid);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
+            const data = userDoc.data();
             callback({
               uid: fbUser.uid,
               email: fbUser.email,
-              ...userDoc.data()
+              viewedContracts: data.viewedContracts || [],
+              ...data
             });
           } else {
             callback({
               uid: fbUser.uid,
               email: fbUser.email,
               name: fbUser.email.split('@')[0],
-              role: 'user'
+              role: 'user',
+              viewedContracts: []
             });
           }
         } catch (e) {
@@ -503,5 +514,47 @@ export const downloadContractFile = async (contract) => {
     
     // Revoga o link blob temporário logo após o download
     setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+  }
+};
+
+// 7. Contratos: Alternar estado de visualização
+export const toggleContractViewed = async (user, contractId, currentStatus) => {
+  if (!user) return [];
+
+  if (isMockMode) {
+    const key = `viewed_contracts_${user.uid}`;
+    let viewed = JSON.parse(localStorage.getItem(key) || "[]");
+    if (currentStatus) {
+      viewed = viewed.filter(id => id !== contractId);
+    } else {
+      if (!viewed.includes(contractId)) {
+        viewed.push(contractId);
+      }
+    }
+    localStorage.setItem(key, JSON.stringify(viewed));
+    
+    // Atualizar a sessão se estiver ativa
+    const session = sessionStorage.getItem("mock_session");
+    if (session) {
+      const parsedSession = JSON.parse(session);
+      if (parsedSession.uid === user.uid) {
+        parsedSession.viewedContracts = viewed;
+        sessionStorage.setItem("mock_session", JSON.stringify(parsedSession));
+      }
+    }
+    
+    return viewed;
+  } else {
+    const userDocRef = doc(db, 'users', user.uid);
+    const updateData = {};
+    if (currentStatus) {
+      updateData.viewedContracts = arrayRemove(contractId);
+    } else {
+      updateData.viewedContracts = arrayUnion(contractId);
+    }
+    await setDoc(userDocRef, updateData, { merge: true });
+    
+    const updatedDoc = await getDoc(userDocRef);
+    return updatedDoc.data()?.viewedContracts || [];
   }
 };
