@@ -35,28 +35,3 @@
   color: var(--text-muted);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
-
-.btn-toggle-view {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-muted);
-  border: 1px solid var(--border-glass);
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-smooth);
-}
-
-.btn-toggle-view:hover {
-  background: rgba(95, 90, 246, 0.1);
-  color: #a5b4fc;
-  border-color: rgba(95, 90, 246, 0.3);
-}
-
-.btn-toggle-view.is-viewed:hover {
-  background: rgba(244, 63, 94, 0.05);
-  color: #fda4af;
-  border-color: rgba(244, 63, 94, 0.2);
-}

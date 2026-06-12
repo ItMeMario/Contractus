@@ -1,11 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X, Eye, EyeOff } from 'lucide-react';
+import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X } from 'lucide-react';
 
 export default function Dashboard({ 
   user, 
   contracts, 
   viewedContractIds = [],
-  onToggleView,
   onDownload, 
   onDelete, 
   onOpenUploadModal, 
@@ -275,14 +274,6 @@ export default function Dashboard({
                   >
                     <Download size={18} />
                     <span>Baixar Contrato</span>
-                  </button>
-
-                  <button
-                    className={`btn-toggle-view ${viewedContractIds.includes(contract.id) ? 'is-viewed' : ''}`}
-                    onClick={() => onToggleView(contract)}
-                    title={viewedContractIds.includes(contract.id) ? "Marcar como não visualizado" : "Marcar como visualizado"}
-                  >
-                    {viewedContractIds.includes(contract.id) ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
 
                   {user.role === 'admin' && (

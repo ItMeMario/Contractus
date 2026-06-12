@@ -210,23 +210,6 @@ export default function App() {
     }
   };
 
-  const handleToggleView = async (contract) => {
-    if (!user) return;
-    const isCurrentlyViewed = viewedContractIds.includes(contract.id);
-    try {
-      const updated = await toggleContractViewed(user, contract.id, isCurrentlyViewed);
-      setViewedContractIds(updated);
-      
-      await addAuditLog(user, 'CONTRACT_VIEW_TOGGLE', {
-        contractId: contract.id,
-        fileName: contract.fileName,
-        status: isCurrentlyViewed ? 'unviewed' : 'viewed'
-      });
-    } catch (err) {
-      logger.error("Erro ao alternar status de visualização:", err);
-    }
-  };
-
   // Carregamento inicial do app (evita tela em branco piscando)
   if (!appReady) {
     return (
@@ -294,7 +277,6 @@ export default function App() {
           user={user}
           contracts={contracts}
           viewedContractIds={viewedContractIds}
-          onToggleView={handleToggleView}
           onDownload={handleDownload}
           onDelete={handleDelete}
           onOpenUploadModal={() => setIsUploadOpen(true)}
