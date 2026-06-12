@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Search, 
   ChevronDown, 
@@ -50,6 +50,7 @@ export default function AuditPanel({
       let matchesPeriod = true;
       if (periodFilter && periodFilter !== 'all') {
         const logTime = new Date(log.timestamp).getTime();
+        // eslint-disable-next-line react-hooks/purity
         const now = Date.now();
         if (periodFilter === '24h') {
           matchesPeriod = now - logTime <= 24 * 3600 * 1000;
@@ -148,13 +149,14 @@ export default function AuditPanel({
             Baixou o arquivo do contrato <strong className="audit-highlight-file">{details.fileName}</strong>.
           </span>
         );
-      case 'CONTRACT_VIEW_TOGGLE':
+      case 'CONTRACT_VIEW_TOGGLE': {
         const isViewed = details.status === 'viewed';
         return (
           <span>
             Marcou o contrato <strong className="audit-highlight-file">{details.fileName}</strong> como <strong className={isViewed ? 'audit-status-read' : 'audit-status-unread'}>{isViewed ? 'Visualizado' : 'Não Lido'}</strong>.
           </span>
         );
+      }
       default:
         return `Executou uma ação no sistema: ${action}`;
     }

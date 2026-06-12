@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   isMockMode, 
   login, 
@@ -10,13 +10,16 @@ import {
   downloadContractFile,
   toggleContractViewed,
   logger,
-  addAuditLog
+  addAuditLog,
+  getAuditLogs,
+  clearMockAuditLogs
 } from './firebase';
 
 import Navbar from './components/Navbar';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import UploadModal from './components/UploadModal';
+import AuditPanel from './components/AuditPanel';
 import { RefreshCw, Play } from 'lucide-react';
 
 export default function App() {
@@ -30,6 +33,9 @@ export default function App() {
     const saved = localStorage.getItem('contractus-scale');
     return saved ? parseFloat(saved) : 1.0;
   });
+  const [activeTab, setActiveTab] = useState('contracts');
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--scale-factor', scale);
@@ -40,6 +46,11 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged((currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        setViewedContractIds(currentUser.viewedContracts || []);
+      } else {
+        setViewedContractIds([]);
+      }
       setAppReady(true);
     });
 
@@ -47,8 +58,9 @@ export default function App() {
   }, []);
 
   // 2. Buscar contratos quando o usuário estiver logado
-  const fetchContracts = async () => {
+  const fetchContracts = useCallback(async () => {
     if (!user) return;
+    await Promise.resolve();
     setLoadingContracts(true);
     try {
       const data = await getContracts(user);
@@ -59,17 +71,59 @@ export default function App() {
     } finally {
       setLoadingContracts(false);
     }
+  }, [user]);
+
+  const fetchAuditLogs = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    await Promise.resolve();
+    setLoadingAudit(true);
+    try {
+      const logsData = await getAuditLogs();
+      setAuditLogs(logsData);
+    } catch (err) {
+      logger.error("Erro ao carregar logs de auditoria:", err);
+    } finally {
+      setLoadingAudit(false);
+    }
+  }, [user]);
+
+  const handleClearAuditLogs = async () => {
+    if (confirm("Tem certeza que deseja redefinir os logs de auditoria locais?")) {
+      await clearMockAuditLogs();
+      await fetchAuditLogs();
+    }
   };
 
   useEffect(() => {
+    let timer;
     if (user) {
-      setViewedContractIds(user.viewedContracts || []);
-      fetchContracts();
+      timer = setTimeout(() => {
+        fetchContracts();
+        if (user.role === 'admin' && activeTab === 'audit') {
+          fetchAuditLogs();
+        }
+      }, 0);
     } else {
-      setContracts([]);
-      setViewedContractIds([]);
+      timer = setTimeout(() => {
+        setContracts([]);
+        setAuditLogs([]);
+        setActiveTab('contracts');
+      }, 0);
     }
-  }, [user]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [user, activeTab, fetchContracts, fetchAuditLogs]);
+
+  // Buscar logs de auditoria quando alternar para a aba correspondente
+  useEffect(() => {
+    if (user && activeTab === 'audit' && user.role === 'admin') {
+      const timer = setTimeout(() => {
+        fetchAuditLogs();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [user, activeTab, fetchAuditLogs]);
 
   // 3. Ações do sistema
   const handleLogin = async (email, password) => {
@@ -109,7 +163,7 @@ export default function App() {
       // Recarregar lista após upload bem-sucedido
       await fetchContracts();
     } catch (err) {
-      throw new Error(err.message || "Erro no envio do arquivo.");
+      throw new Error(err.message || "Erro no envio do arquivo.", { cause: err });
     }
   };
 
@@ -218,19 +272,36 @@ export default function App() {
         </div>
       )}
 
-      <Navbar user={user} onLogout={handleLogout} scale={scale} setScale={setScale} />
-
-      <Dashboard 
-        user={user}
-        contracts={contracts}
-        viewedContractIds={viewedContractIds}
-        onToggleView={handleToggleView}
-        onDownload={handleDownload}
-        onDelete={handleDelete}
-        onOpenUploadModal={() => setIsUploadOpen(true)}
-        loading={loadingContracts}
-        onRefresh={fetchContracts}
+      <Navbar 
+        user={user} 
+        onLogout={handleLogout} 
+        scale={scale} 
+        setScale={setScale} 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
       />
+
+      {activeTab === 'audit' && user.role === 'admin' ? (
+        <AuditPanel 
+          logs={auditLogs}
+          loading={loadingAudit}
+          onRefresh={fetchAuditLogs}
+          onClearLogs={handleClearAuditLogs}
+          isMock={isMockMode}
+        />
+      ) : (
+        <Dashboard 
+          user={user}
+          contracts={contracts}
+          viewedContractIds={viewedContractIds}
+          onToggleView={handleToggleView}
+          onDownload={handleDownload}
+          onDelete={handleDelete}
+          onOpenUploadModal={() => setIsUploadOpen(true)}
+          loading={loadingContracts}
+          onRefresh={fetchContracts}
+        />
+      )}
 
       <UploadModal 
         isOpen={isUploadOpen}

@@ -90,3 +90,36 @@
   color: var(--text-inverse);
   border-color: var(--error);
 }
+
+/* Abas de Navegação do Administrador */
+.nav-navigation {
+  display: flex;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--border-glass);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.nav-nav-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.nav-nav-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-nav-btn.active {
+  color: var(--text-inverse);
+  background: var(--primary);
+  box-shadow: 0 2px 8px var(--primary-glow);
+}

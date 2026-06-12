@@ -1,4 +1,3 @@
-import React from 'react';
 import { Accessibility } from 'lucide-react';
 
 export default function AccessibilityControls({ scale, setScale }) {

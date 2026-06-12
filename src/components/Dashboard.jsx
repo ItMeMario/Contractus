@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X, Eye, EyeOff } from 'lucide-react';
 
 export default function Dashboard({ 

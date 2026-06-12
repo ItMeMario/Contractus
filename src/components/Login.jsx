@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, FolderLock, ShieldAlert, KeyRound } from 'lucide-react';
 import AccessibilityControls from './AccessibilityControls';
 

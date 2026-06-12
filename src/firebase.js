@@ -68,7 +68,7 @@ if (isFirebaseConfigured) {
 
 // --- BANCO DE DADOS LOCAL (MOCK) ---
 let MOCK_USERS = {};
-let INITIAL_MOCK_CONTRACTS = [];
+let INITIAL_MOCK_CONTRACTS;
 const mockFileBlobs = {};
 
 if (import.meta.env.DEV) {
@@ -264,7 +264,7 @@ export const login = async (email, password) => {
       }
     } catch (error) {
       logger.error("Erro no login:", error);
-      throw new Error("E-mail ou senha incorretos. Verifique suas credenciais.");
+      throw new Error("E-mail ou senha incorretos. Verifique suas credenciais.", { cause: error });
     }
   }
 };
