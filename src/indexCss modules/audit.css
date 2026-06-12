@@ -1,0 +1,271 @@
+/* ==========================================================================
+   Componente: Painel de Auditoria (AuditPanel)
+   ========================================================================== */
+
+/* Cards de Estatísticas */
+.audit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.audit-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: var(--transition-smooth);
+}
+
+.audit-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(95, 90, 246, 0.2);
+}
+
+.stat-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+}
+
+.stat-icon-total {
+  background: rgba(95, 90, 246, 0.1);
+  color: var(--primary);
+}
+
+.stat-icon-upload {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.stat-icon-action {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4; /* Cyan */
+}
+
+.stat-icon-user {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+/* Botão Limpar Logs */
+.btn-clear-logs {
+  background: rgba(244, 63, 94, 0.1);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-clear-logs:hover {
+  background: var(--error);
+  color: var(--text-inverse);
+  border-color: var(--error);
+  box-shadow: 0 4px 15px rgba(244, 63, 94, 0.2);
+}
+
+/* Tabela de Auditoria */
+.audit-table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  overflow-x: auto;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.audit-table th {
+  background: rgba(15, 23, 42, 0.4);
+  padding: 18px 24px;
+  font-weight: 700;
+  font-family: var(--font-title);
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-glass);
+  letter-spacing: 0.02em;
+}
+
+.audit-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: var(--transition-smooth);
+}
+
+.audit-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.audit-row:last-child {
+  border-bottom: none;
+}
+
+.audit-table td {
+  padding: 16px 24px;
+  vertical-align: middle;
+}
+
+/* Colunas Específicas */
+.audit-time-cell {
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.audit-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.audit-user-name {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.audit-user-email {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.audit-details-cell {
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+
+/* Destaques em Texto */
+.audit-highlight-file {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.audit-highlight-box {
+  color: #c7d2fe;
+  font-weight: 600;
+}
+
+.audit-highlight-delete {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.audit-status-read {
+  color: #34d399; /* Emerald/Green */
+  font-weight: 700;
+}
+
+.audit-status-unread {
+  color: #818cf8; /* Indigo */
+  font-weight: 700;
+}
+
+/* Badges das Ações na Auditoria */
+.audit-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.badge-audit-login {
+  background: rgba(168, 85, 247, 0.1);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.badge-audit-logout {
+  background: rgba(244, 63, 94, 0.1);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.badge-audit-upload {
+  background: rgba(16, 185, 129, 0.1);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-audit-delete {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-audit-download {
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.badge-audit-view {
+  background: rgba(6, 182, 212, 0.1);
+  color: #a5f3fc;
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.badge-audit-default {
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Responsividade adicional */
+@media (max-width: 768px) {
+  .audit-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .audit-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .audit-table th, .audit-table td {
+    padding: 12px 16px;
+  }
+}
