@@ -9,7 +9,8 @@ import {
   deleteContract, 
   downloadContractFile,
   toggleContractViewed,
-  logger
+  logger,
+  addAuditLog
 } from './firebase';
 
 import Navbar from './components/Navbar';
@@ -72,12 +73,15 @@ export default function App() {
 
   // 3. Ações do sistema
   const handleLogin = async (email, password) => {
-    return await login(email, password);
+    const loggedInUser = await login(email, password);
+    await addAuditLog(loggedInUser, 'LOGIN', { method: 'email' });
+    return loggedInUser;
   };
 
   const handleLogout = async () => {
     if (confirm("Tem certeza que deseja sair do portal?")) {
       try {
+        await addAuditLog(user, 'LOGOUT', {});
         await logout();
       } catch (err) {
         logger.error("Erro ao deslogar:", err);
@@ -92,7 +96,16 @@ export default function App() {
         ...metadata,
         uploadedBy: user.uid
       };
-      await uploadContract(file, metadataWithUser, onProgress);
+      const newContract = await uploadContract(file, metadataWithUser, onProgress);
+      
+      await addAuditLog(user, 'CONTRACT_UPLOAD', {
+        contractId: newContract.id,
+        fileName: newContract.fileName,
+        fileSize: newContract.fileSize,
+        payment: newContract.payment,
+        commissionBox: newContract.commissionBox
+      });
+
       // Recarregar lista após upload bem-sucedido
       await fetchContracts();
     } catch (err) {
@@ -109,6 +122,12 @@ export default function App() {
     if (confirmation) {
       try {
         await deleteContract(contract, user);
+        
+        await addAuditLog(user, 'CONTRACT_DELETE', {
+          contractId: contract.id,
+          fileName: contract.fileName
+        });
+
         // Atualizar lista após remoção
         setContracts(prev => prev.filter(c => c.id !== contract.id));
       } catch (err) {
@@ -121,6 +140,12 @@ export default function App() {
   const handleDownload = async (contract) => {
     try {
       await downloadContractFile(contract);
+      
+      await addAuditLog(user, 'CONTRACT_DOWNLOAD', {
+        contractId: contract.id,
+        fileName: contract.fileName
+      });
+
       if (!viewedContractIds.includes(contract.id)) {
         const updated = await toggleContractViewed(user, contract.id, false);
         setViewedContractIds(updated);
@@ -137,6 +162,12 @@ export default function App() {
     try {
       const updated = await toggleContractViewed(user, contract.id, isCurrentlyViewed);
       setViewedContractIds(updated);
+      
+      await addAuditLog(user, 'CONTRACT_VIEW_TOGGLE', {
+        contractId: contract.id,
+        fileName: contract.fileName,
+        status: isCurrentlyViewed ? 'unviewed' : 'viewed'
+      });
     } catch (err) {
       logger.error("Erro ao alternar status de visualização:", err);
     }
