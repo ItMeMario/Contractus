@@ -12,9 +12,9 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Usuários: apenas o próprio usuário pode visualizar seu perfil
+    // Usuários: apenas o próprio usuário ou admin pode visualizar seu perfil
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       
       // Permitir que o próprio usuário grave ou edite seus dados (como nome),
       // mas bloquear completamente a definição ou modificação do campo 'role'.
@@ -26,11 +26,12 @@ service cloud.firestore {
     }
 
     // Contratos: 
-    // - Leitura: Admins ou o próprio autor do upload
+    // - Leitura: Admins, próprio autor do upload ou destinatário atribuído (assignedTo)
     // - Escrita/Deleção: Apenas Admins
     match /contracts/{contractId} {
       allow read: if request.auth != null && (
         isAdmin() || 
+        resource.data.assignedTo == request.auth.uid ||
         resource.data.uploadedBy == request.auth.uid
       );
       allow create: if request.auth != null && isAdmin();

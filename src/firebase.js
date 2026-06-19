@@ -110,6 +110,7 @@ if (import.meta.env.DEV) {
       payment: 12500.00,
       commissionBox: "Caixa Fulano",
       uploadedBy: "mock-admin-uid",
+      assignedTo: "mock-fulano-uid",
       uploadedAt: new Date(Date.now() - 3600000 * 24).toISOString() // 1 dia atrás
     },
     {
@@ -122,6 +123,7 @@ if (import.meta.env.DEV) {
       payment: 8400.00,
       commissionBox: "Caixa Deltrano",
       uploadedBy: "mock-admin-uid",
+      assignedTo: "mock-deltrano-uid",
       uploadedAt: new Date(Date.now() - 3600000 * 48).toISOString() // 2 dias atrás
     }
   ];
@@ -304,24 +306,25 @@ export const onAuthStateChanged = (callback) => {
       if (fbUser) {
         try {
           const userDocRef = doc(db, 'users', fbUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            callback({
-              uid: fbUser.uid,
+          let userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists()) {
+            // Inicializa o perfil do usuário no Firestore se ele não existir
+            const initialProfile = {
+              name: fbUser.displayName || fbUser.email.split('@')[0],
               email: fbUser.email,
-              viewedContracts: data.viewedContracts || [],
-              ...data
-            });
-          } else {
-            callback({
-              uid: fbUser.uid,
-              email: fbUser.email,
-              name: fbUser.email.split('@')[0],
               role: 'user',
               viewedContracts: []
-            });
+            };
+            await setDoc(userDocRef, initialProfile, { merge: true });
+            userDoc = await getDoc(userDocRef);
           }
+          const data = userDoc.data();
+          callback({
+            uid: fbUser.uid,
+            email: fbUser.email,
+            viewedContracts: data.viewedContracts || [],
+            ...data
+          });
         } catch (e) {
           logger.error("Erro ao obter dados do usuário:", e);
           callback({
@@ -354,18 +357,11 @@ export const getContracts = async (user) => {
           return;
         }
 
-        // Se for user comum, filtra no mock
+        // Se for user comum, filtra no mock pelo campo assignedTo
         const filtered = list.filter(contract => {
           const uploadedByMe = contract.uploadedBy === user.uid;
-          const userNameLower = (user.name || '').toLowerCase();
-          const userEmailPrefixLower = (user.email ? user.email.split('@')[0] : '').toLowerCase();
-          const commissionBoxLower = (contract.commissionBox || '').toLowerCase();
-          
-          const matchesBox = commissionBoxLower && (
-            (userNameLower && commissionBoxLower.includes(userNameLower)) ||
-            (userEmailPrefixLower && commissionBoxLower.includes(userEmailPrefixLower))
-          );
-          return uploadedByMe || matchesBox;
+          const assignedToMe = contract.assignedTo === user.uid;
+          return uploadedByMe || assignedToMe;
         });
 
         filtered.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
@@ -383,10 +379,10 @@ export const getContracts = async (user) => {
         ...doc.data()
       }));
     } else {
-      // Busca apenas contratos criados por este usuário no Firebase
+      // Busca apenas contratos atribuídos a este usuário no Firebase
       const q = query(
         contractsCol,
-        where('uploadedBy', '==', user.uid),
+        where('assignedTo', '==', user.uid),
         orderBy('uploadedAt', 'desc')
       );
       const snapshot = await getDocs(q);
@@ -395,6 +391,25 @@ export const getContracts = async (user) => {
         ...doc.data()
       }));
     }
+  }
+};
+
+// 4.5. Usuários: Buscar todos (para atribuição de contratos)
+export const getUsers = async () => {
+  if (isMockMode) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const list = Object.values(MOCK_USERS);
+        resolve(list);
+      }, 300);
+    });
+  } else {
+    const usersCol = collection(db, 'users');
+    const snapshot = await getDocs(usersCol);
+    return snapshot.docs.map(doc => ({
+      uid: doc.id,
+      ...doc.data()
+    }));
   }
 };
 
@@ -456,6 +471,7 @@ export const uploadContract = async (file, metadata, onProgress) => {
             payment: parseFloat(metadata.payment) || 0,
             commissionBox: metadata.commissionBox,
             uploadedBy: metadata.uploadedBy || "mock-admin-uid",
+            assignedTo: metadata.assignedTo,
             uploadedAt: new Date().toISOString()
           };
           
@@ -494,6 +510,7 @@ export const uploadContract = async (file, metadata, onProgress) => {
               payment: parseFloat(metadata.payment) || 0,
               commissionBox: metadata.commissionBox,
               uploadedBy: metadata.uploadedBy,
+              assignedTo: metadata.assignedTo,
               uploadedAt: new Date().toISOString()
             };
             

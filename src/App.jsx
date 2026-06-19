@@ -12,7 +12,8 @@ import {
   logger,
   addAuditLog,
   getAuditLogs,
-  clearMockAuditLogs
+  clearMockAuditLogs,
+  getUsers
 } from './firebase';
 
 import Navbar from './components/Navbar';
@@ -36,6 +37,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('contracts');
   const [auditLogs, setAuditLogs] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
+  const [usersList, setUsersList] = useState([]);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--scale-factor', scale);
@@ -87,6 +89,16 @@ export default function App() {
     }
   }, [user]);
 
+  const fetchUsers = useCallback(async () => {
+    if (!user || user.role !== 'admin') return;
+    try {
+      const data = await getUsers();
+      setUsersList(data);
+    } catch (err) {
+      logger.error("Erro ao carregar usuários:", err);
+    }
+  }, [user]);
+
   const handleClearAuditLogs = async () => {
     if (confirm("Tem certeza que deseja redefinir os logs de auditoria locais?")) {
       await clearMockAuditLogs();
@@ -99,21 +111,25 @@ export default function App() {
     if (user) {
       timer = setTimeout(() => {
         fetchContracts();
-        if (user.role === 'admin' && activeTab === 'audit') {
-          fetchAuditLogs();
+        if (user.role === 'admin') {
+          fetchUsers();
+          if (activeTab === 'audit') {
+            fetchAuditLogs();
+          }
         }
       }, 0);
     } else {
       timer = setTimeout(() => {
         setContracts([]);
         setAuditLogs([]);
+        setUsersList([]);
         setActiveTab('contracts');
       }, 0);
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [user, activeTab, fetchContracts, fetchAuditLogs]);
+  }, [user, activeTab, fetchContracts, fetchAuditLogs, fetchUsers]);
 
   // Buscar logs de auditoria quando alternar para a aba correspondente
   useEffect(() => {
@@ -289,6 +305,7 @@ export default function App() {
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         onUpload={handleUpload}
+        users={usersList}
       />
     </div>
   );

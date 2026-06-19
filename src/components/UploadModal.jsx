@@ -2,12 +2,13 @@ import { useState, useRef } from 'react';
 import { X, UploadCloud, FileText, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { logger } from '../firebase';
 
-export default function UploadModal({ isOpen, onClose, onUpload }) {
+export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
   const [file, setFile] = useState(null);
   const [cityCreated, setCityCreated] = useState('');
   const [cityFashionDay, setCityFashionDay] = useState('');
   const [payment, setPayment] = useState('');
   const [commissionBox, setCommissionBox] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
   
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -59,8 +60,8 @@ export default function UploadModal({ isOpen, onClose, onUpload }) {
       setErrorMessage('Por favor, selecione o arquivo do contrato.');
       return;
     }
-    if (!cityCreated.trim() || !cityFashionDay.trim() || !payment.trim() || !commissionBox.trim()) {
-      setErrorMessage('Preencha todas as informações obrigatórias.');
+    if (!cityCreated.trim() || !cityFashionDay.trim() || !payment.trim() || !commissionBox.trim() || !assignedTo) {
+      setErrorMessage('Preencha todas as informações obrigatórias e selecione um usuário.');
       return;
     }
 
@@ -73,7 +74,8 @@ export default function UploadModal({ isOpen, onClose, onUpload }) {
         cityCreated: cityCreated.trim(),
         cityFashionDay: cityFashionDay.trim(),
         payment: parseFloat(payment) || 0,
-        commissionBox: commissionBox.trim()
+        commissionBox: commissionBox.trim(),
+        assignedTo: assignedTo
       };
 
       await onUpload(file, metadata, (progress) => {
@@ -95,6 +97,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }) {
     setCityFashionDay('');
     setPayment('');
     setCommissionBox('');
+    setAssignedTo('');
     setUploading(false);
     setUploadProgress(0);
     setStatus('idle');
@@ -229,17 +232,47 @@ export default function UploadModal({ isOpen, onClose, onUpload }) {
 
               <div className="form-group">
                 <label htmlFor="commissionBox">Caixa do Pagamento (Comissões)</label>
-                <input
+                <select
                   id="commissionBox"
-                  type="text"
                   className="input-field"
-                  style={{ paddingLeft: '16px' }}
-                  placeholder="Ex: Caixa Fulano, Caixa Principal"
+                  style={{ paddingLeft: '12px', height: '52px', color: 'var(--text-main)', background: 'var(--bg-input)' }}
                   value={commissionBox}
                   onChange={(e) => setCommissionBox(e.target.value)}
                   disabled={uploading}
                   required
-                />
+                >
+                  <option value="" style={{ color: 'var(--text-muted)' }}>Selecione o caixa do usuário...</option>
+                  <option value="Caixa Principal" style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>Caixa Principal</option>
+                  {users.map(u => {
+                    const userName = u.name || u.email.split('@')[0];
+                    const boxValue = `Caixa ${userName}`;
+                    return (
+                      <option key={u.uid} value={boxValue} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                        {boxValue} ({u.email})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="assignedTo">Atribuir ao Usuário (Acesso ao Contrato)</label>
+                <select
+                  id="assignedTo"
+                  className="input-field"
+                  style={{ paddingLeft: '12px', height: '52px', color: 'var(--text-main)', background: 'var(--bg-input)' }}
+                  value={assignedTo}
+                  onChange={(e) => setAssignedTo(e.target.value)}
+                  disabled={uploading}
+                  required
+                >
+                  <option value="" style={{ color: 'var(--text-muted)' }}>Selecione o usuário...</option>
+                  {users.map(u => (
+                    <option key={u.uid} value={u.uid} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                      {u.name || u.email.split('@')[0]} ({u.email})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Progresso de Envio */}
