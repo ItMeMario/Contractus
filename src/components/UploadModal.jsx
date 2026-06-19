@@ -105,6 +105,19 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
     onClose();
   };
 
+  const handleAssignedToChange = (val) => {
+    setAssignedTo(val);
+    if (val === "") {
+      setCommissionBox("");
+    } else {
+      const selectedUser = users.find(u => u.uid === val);
+      if (selectedUser) {
+        const userName = selectedUser.name || selectedUser.email.split('@')[0];
+        setCommissionBox(`Caixa ${userName}`);
+      }
+    }
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-card">
@@ -231,47 +244,25 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
               </div>
 
               <div className="form-group">
-                <label htmlFor="commissionBox">Caixa do Pagamento (Comissões)</label>
-                <select
-                  id="commissionBox"
-                  className="input-field"
-                  style={{ paddingLeft: '12px', height: '52px', color: 'var(--text-main)', background: 'var(--bg-input)' }}
-                  value={commissionBox}
-                  onChange={(e) => setCommissionBox(e.target.value)}
-                  disabled={uploading}
-                  required
-                >
-                  <option value="" style={{ color: 'var(--text-muted)' }}>Selecione o caixa do usuário...</option>
-                  <option value="Caixa Principal" style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>Caixa Principal</option>
-                  {users.map(u => {
-                    const userName = u.name || u.email.split('@')[0];
-                    const boxValue = `Caixa ${userName}`;
-                    return (
-                      <option key={u.uid} value={boxValue} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
-                        {boxValue} ({u.email})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="assignedTo">Atribuir ao Usuário (Acesso ao Contrato)</label>
+                <label htmlFor="assignedTo">Caixa do Pagamento (Acesso ao Contrato)</label>
                 <select
                   id="assignedTo"
                   className="input-field"
                   style={{ paddingLeft: '12px', height: '52px', color: 'var(--text-main)', background: 'var(--bg-input)' }}
                   value={assignedTo}
-                  onChange={(e) => setAssignedTo(e.target.value)}
+                  onChange={(e) => handleAssignedToChange(e.target.value)}
                   disabled={uploading}
                   required
                 >
-                  <option value="" style={{ color: 'var(--text-muted)' }}>Selecione o usuário...</option>
-                  {users.map(u => (
-                    <option key={u.uid} value={u.uid} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
-                      {u.name || u.email.split('@')[0]} ({u.email})
-                    </option>
-                  ))}
+                  <option value="" style={{ color: 'var(--text-muted)' }}>Selecione o caixa do usuário...</option>
+                  {users.map(u => {
+                    const userName = u.name || u.email.split('@')[0];
+                    return (
+                      <option key={u.uid} value={u.uid} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                        Caixa {userName} ({u.email})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
