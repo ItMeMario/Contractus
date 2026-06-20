@@ -64,6 +64,8 @@ if (isFirebaseConfigured) {
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
+  // Define limite de novas tentativas de upload para 1 minuto em caso de falha de rede/CORS
+  storage.maxUploadRetryTime = 60000;
 }
 
 // --- BANCO DE DADOS LOCAL (MOCK) ---
