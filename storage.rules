@@ -7,9 +7,9 @@ service firebase.storage {
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    match /contracts/{allPaths=**} {
-      // Qualquer usuário logado pode ler/baixar arquivos
-      allow read: if request.auth != null;
+    match /contracts/{userId}/{fileId} {
+      // Permitir leitura apenas se o usuário for o dono do caixa correspondente ou admin
+      allow read: if request.auth != null && (isAdminInFirestore() || request.auth.uid == userId);
       
       // Apenas administradores podem fazer upload ou apagar arquivos
       // Restringe tamanho (<25MB) e tipos de conteúdo permitidos (PDF/Word)

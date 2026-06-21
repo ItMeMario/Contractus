@@ -486,9 +486,10 @@ export const uploadContract = async (file, metadata, onProgress) => {
       }, 200);
     });
   } else {
-    // Realizar upload do arquivo no Storage
+    // Realizar upload do arquivo no Storage usando o ID do destinatário na estrutura de pastas
     const fileId = Math.random().toString(36).substring(2, 11) + "_" + file.name;
-    const storageRef = ref(storage, `contracts/${fileId}`);
+    const storagePath = `contracts/${metadata.assignedTo}/${fileId}`;
+    const storageRef = ref(storage, storagePath);
     const uploadTask = uploadBytesResumable(storageRef, file);
     
     return new Promise((resolve, reject) => {
@@ -506,7 +507,7 @@ export const uploadContract = async (file, metadata, onProgress) => {
             const newDoc = {
               fileName: file.name,
               fileSize: formatFileSize(file.size),
-              storagePath: `contracts/${fileId}`,
+              storagePath: storagePath,
               cityCreated: metadata.cityCreated,
               cityFashionDay: metadata.cityFashionDay,
               payment: parseFloat(metadata.payment) || 0,
