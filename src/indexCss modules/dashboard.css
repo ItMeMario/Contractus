@@ -355,3 +355,53 @@
   color: var(--text-muted);
   max-width: 400px;
 }
+
+/* Contratos Cancelados e Ações */
+.contract-cancelled {
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  opacity: 0.85;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.03);
+}
+
+.contract-cancelled:hover {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(239, 68, 68, 0.08) !important;
+}
+
+.btn-cancel-contract {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fde047;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.btn-cancel-contract:hover {
+  background: #f59e0b;
+  color: var(--text-inverse);
+  border-color: #f59e0b;
+}
+
+.btn-reactivate-contract {
+  background: rgba(16, 185, 129, 0.1);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.btn-reactivate-contract:hover {
+  background: #10b981;
+  color: var(--text-inverse);
+  border-color: #10b981;
+}

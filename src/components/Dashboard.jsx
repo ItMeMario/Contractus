@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X } from 'lucide-react';
+import { Search, Download, Trash2, Plus, FileText, ChevronDown, RefreshCw, X, Ban, RotateCcw } from 'lucide-react';
 
 export default function Dashboard({ 
   user, 
@@ -7,6 +7,7 @@ export default function Dashboard({
   viewedContractIds = [],
   onDownload, 
   onDelete, 
+  onToggleCancel,
   onOpenUploadModal, 
   loading, 
   onRefresh 
@@ -214,7 +215,10 @@ export default function Dashboard({
       ) : (
         <div className="contracts-grid">
           {filteredContracts.map(contract => (
-            <div key={contract.id} className="contract-card">
+            <div 
+              key={contract.id} 
+              className={`contract-card ${contract.status === 'cancelled' ? 'contract-cancelled' : ''}`}
+            >
               {/* Header do Card */}
               <div className="contract-card-header">
                 <div className="contract-file-icon">
@@ -223,9 +227,16 @@ export default function Dashboard({
                 <div className="contract-file-info">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span className="contract-size">{contract.fileSize}</span>
-                    <span className={`view-status-badge ${viewedContractIds.includes(contract.id) ? 'status-read' : 'status-unread'}`}>
-                      {viewedContractIds.includes(contract.id) ? 'Visualizado' : 'Não Lido'}
-                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {contract.status === 'cancelled' && (
+                        <span className="view-status-badge status-cancelled">
+                          Cancelado
+                        </span>
+                      )}
+                      <span className={`view-status-badge ${viewedContractIds.includes(contract.id) ? 'status-read' : 'status-unread'}`}>
+                        {viewedContractIds.includes(contract.id) ? 'Visualizado' : 'Não Lido'}
+                      </span>
+                    </div>
                   </div>
                   <h3 className="contract-name" title={contract.fileName}>
                     {contract.fileName}
@@ -277,13 +288,22 @@ export default function Dashboard({
                   </button>
 
                   {user.role === 'admin' && (
-                    <button 
-                      className="btn-delete-contract" 
-                      onClick={() => onDelete(contract)}
-                      title="Excluir contrato"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <>
+                      <button 
+                        className={contract.status === 'cancelled' ? "btn-reactivate-contract" : "btn-cancel-contract"}
+                        onClick={() => onToggleCancel(contract)}
+                        title={contract.status === 'cancelled' ? "Reativar contrato" : "Cancelar contrato"}
+                      >
+                        {contract.status === 'cancelled' ? <RotateCcw size={18} /> : <Ban size={18} />}
+                      </button>
+                      <button 
+                        className="btn-delete-contract" 
+                        onClick={() => onDelete(contract)}
+                        title="Excluir contrato"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </>
                   )}
                 </div>
                 

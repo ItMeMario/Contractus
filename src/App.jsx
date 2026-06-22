@@ -7,6 +7,7 @@ import {
   getContracts, 
   uploadContract, 
   deleteContract, 
+  toggleContractCancel,
   downloadContractFile,
   toggleContractViewed,
   logger,
@@ -207,6 +208,36 @@ export default function App() {
     }
   };
 
+  const handleToggleCancel = async (contract) => {
+    const isCancelling = contract.status !== 'cancelled';
+    const actionText = isCancelling ? 'cancelar' : 'reativar';
+    const confirmation = confirm(
+      `Tem certeza que deseja ${actionText} o contrato "${contract.fileName}"?`
+    );
+
+    if (confirmation) {
+      try {
+        const newStatus = await toggleContractCancel(contract.id, contract.status, user);
+        
+        await addAuditLog(user, isCancelling ? 'CONTRACT_CANCEL' : 'CONTRACT_REACTIVATE', {
+          contractId: contract.id,
+          fileName: contract.fileName
+        });
+
+        // Atualizar lista localmente
+        setContracts(prev => prev.map(c => {
+          if (c.id === contract.id) {
+            return { ...c, status: newStatus };
+          }
+          return c;
+        }));
+      } catch (err) {
+        logger.error(`Erro ao ${actionText} contrato:`, err);
+        alert(`Não foi possível ${actionText} o contrato. Tente novamente.`);
+      }
+    }
+  };
+
   const handleDownload = async (contract) => {
     try {
       await downloadContractFile(contract);
@@ -295,6 +326,7 @@ export default function App() {
           viewedContractIds={viewedContractIds}
           onDownload={handleDownload}
           onDelete={handleDelete}
+          onToggleCancel={handleToggleCancel}
           onOpenUploadModal={() => setIsUploadOpen(true)}
           loading={loadingContracts}
           onRefresh={fetchContracts}

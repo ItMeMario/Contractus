@@ -12,7 +12,9 @@ import {
   LogIn, 
   X,
   Users,
-  Activity
+  Activity,
+  Ban,
+  RotateCcw
 } from 'lucide-react';
 
 export default function AuditPanel({ 
@@ -119,6 +121,10 @@ export default function AuditPanel({
         return { text: 'Download', className: 'badge-audit-download', icon: Download };
       case 'CONTRACT_VIEW_TOGGLE': 
         return { text: 'Visualização', className: 'badge-audit-view', icon: Eye };
+      case 'CONTRACT_CANCEL': 
+        return { text: 'Cancelamento', className: 'badge-audit-cancel', icon: Ban };
+      case 'CONTRACT_REACTIVATE': 
+        return { text: 'Reativação', className: 'badge-audit-reactivate', icon: RotateCcw };
       default: 
         return { text: action, className: 'badge-audit-default', icon: Shield };
     }
@@ -147,6 +153,18 @@ export default function AuditPanel({
         return (
           <span>
             Baixou o arquivo do contrato <strong className="audit-highlight-file">{details.fileName}</strong>.
+          </span>
+        );
+      case 'CONTRACT_CANCEL':
+        return (
+          <span>
+            Cancelou o contrato <strong className="audit-highlight-delete">{details.fileName}</strong>. O arquivo ainda pode ser baixado pelos destinatários.
+          </span>
+        );
+      case 'CONTRACT_REACTIVATE':
+        return (
+          <span>
+            Reativou o contrato <strong className="audit-highlight-file">{details.fileName}</strong>.
           </span>
         );
       case 'CONTRACT_VIEW_TOGGLE': {
@@ -266,6 +284,8 @@ export default function AuditPanel({
               <option value="CONTRACT_VIEW_TOGGLE">Alteração de Visualização</option>
               <option value="CONTRACT_DOWNLOAD">Download de Arquivo</option>
               <option value="CONTRACT_DELETE">Exclusão de Contrato</option>
+              <option value="CONTRACT_CANCEL">Cancelamento de Contrato</option>
+              <option value="CONTRACT_REACTIVATE">Reativação de Contrato</option>
               <option value="LOGIN">Sessão: Login</option>
               <option value="LOGOUT">Sessão: Logout</option>
             </select>

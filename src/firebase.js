@@ -563,6 +563,35 @@ export const deleteContract = async (contract, user) => {
   }
 };
 
+// 6.5. Contratos: Cancelar / Reativar (Alternar Status de Cancelamento)
+export const toggleContractCancel = async (contractId, currentStatus, user) => {
+  if (!user || user.role !== 'admin') {
+    throw new Error("Ação não autorizada. Apenas administradores podem gerenciar o status de cancelamento dos contratos.");
+  }
+
+  const newStatus = currentStatus === 'cancelled' ? 'active' : 'cancelled';
+
+  if (isMockMode) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const list = JSON.parse(localStorage.getItem("mock_contracts") || "[]");
+        const updatedList = list.map(item => {
+          if (item.id === contractId) {
+            return { ...item, status: newStatus };
+          }
+          return item;
+        });
+        localStorage.setItem("mock_contracts", JSON.stringify(updatedList));
+        resolve(newStatus);
+      }, 500);
+    });
+  } else {
+    const contractRef = doc(db, 'contracts', contractId);
+    await setDoc(contractRef, { status: newStatus }, { merge: true });
+    return newStatus;
+  }
+};
+
 // Função auxiliar para baixar arquivo mock ou real (tornada assíncrona)
 export const downloadContractFile = async (contract) => {
   if (isMockMode) {
