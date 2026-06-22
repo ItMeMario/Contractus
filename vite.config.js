@@ -12,7 +12,7 @@ const cspHtmlPlugin = () => {
           script-src 'self';
           style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
           font-src 'self' https://fonts.gstatic.com;
-          connect-src 'self' https://*.firebaseio.com https://*.googleapis.com;
+          connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://servicodados.ibge.gov.br;
           img-src 'self' data: blob:;">`;
         return html.replace('</head>', `${cspMeta}\n  </head>`);
       }

@@ -2,10 +2,69 @@ import { useState, useRef } from 'react';
 import { X, UploadCloud, FileText, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { logger } from '../firebase';
 
+// Lista estática dos 27 estados do Brasil (UFs)
+const ESTADOS_BRASIL = [
+  { sigla: 'AC', nome: 'Acre' },
+  { sigla: 'AL', nome: 'Alagoas' },
+  { sigla: 'AP', nome: 'Amapá' },
+  { sigla: 'AM', nome: 'Amazonas' },
+  { sigla: 'BA', nome: 'Bahia' },
+  { sigla: 'CE', nome: 'Ceará' },
+  { sigla: 'DF', nome: 'Distrito Federal' },
+  { sigla: 'ES', nome: 'Espírito Santo' },
+  { sigla: 'GO', nome: 'Goiás' },
+  { sigla: 'MA', nome: 'Maranhão' },
+  { sigla: 'MT', nome: 'Mato Grosso' },
+  { sigla: 'MS', nome: 'Mato Grosso do Sul' },
+  { sigla: 'MG', nome: 'Minas Gerais' },
+  { sigla: 'PA', nome: 'Pará' },
+  { sigla: 'PB', nome: 'Paraíba' },
+  { sigla: 'PR', nome: 'Paraná' },
+  { sigla: 'PE', nome: 'Pernambuco' },
+  { sigla: 'PI', nome: 'Piauí' },
+  { sigla: 'RJ', nome: 'Rio de Janeiro' },
+  { sigla: 'RN', nome: 'Rio Grande do Norte' },
+  { sigla: 'RS', nome: 'Rio Grande do Sul' },
+  { sigla: 'RO', nome: 'Rondônia' },
+  { sigla: 'RR', nome: 'Roraima' },
+  { sigla: 'SC', nome: 'Santa Catarina' },
+  { sigla: 'SP', nome: 'São Paulo' },
+  { sigla: 'SE', nome: 'Sergipe' },
+  { sigla: 'TO', nome: 'Tocantins' }
+];
+
+// Cache em memória para evitar requisições HTTP duplicadas ao IBGE
+const citiesCache = {};
+
+const fetchCitiesForState = async (uf) => {
+  if (citiesCache[uf]) return citiesCache[uf];
+  const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+  if (!response.ok) {
+    throw new Error('Falha ao buscar cidades no IBGE');
+  }
+  const data = await response.json();
+  const cityNames = data.map(item => item.nome);
+  citiesCache[uf] = cityNames;
+  return cityNames;
+};
+
 export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
   const [file, setFile] = useState(null);
-  const [cityCreated, setCityCreated] = useState('');
-  const [cityFashionDay, setCityFashionDay] = useState('');
+  
+  // Estados para a Cidade onde foi feito (Origem)
+  const [stateCreated, setStateCreated] = useState('');
+  const [citiesCreated, setCitiesCreated] = useState([]);
+  const [cityCreatedInput, setCityCreatedInput] = useState('');
+  const [loadingCitiesCreated, setLoadingCitiesCreated] = useState(false);
+  const [fetchFailedCreated, setFetchFailedCreated] = useState(false);
+
+  // Estados para a Cidade do Fashion Day
+  const [stateFashionDay, setStateFashionDay] = useState('');
+  const [citiesFashionDay, setCitiesFashionDay] = useState([]);
+  const [cityFashionDayInput, setCityFashionDayInput] = useState('');
+  const [loadingCitiesFashionDay, setLoadingCitiesFashionDay] = useState(false);
+  const [fetchFailedFashionDay, setFetchFailedFashionDay] = useState(false);
+
   const [payment, setPayment] = useState('');
   const [commissionBox, setCommissionBox] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
@@ -60,10 +119,49 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
       setErrorMessage('Por favor, selecione o arquivo do contrato.');
       return;
     }
-    if (!cityCreated.trim() || !cityFashionDay.trim() || !payment.trim() || !commissionBox.trim() || !assignedTo) {
+
+    // Validar campos obrigatórios
+    const isCityCreatedMissing = !cityCreatedInput.trim() || !stateCreated;
+    const isCityFashionDayMissing = !cityFashionDayInput.trim() || !stateFashionDay;
+    
+    if (isCityCreatedMissing || isCityFashionDayMissing || !payment.trim() || !commissionBox.trim() || !assignedTo) {
       setErrorMessage('Preencha todas as informações obrigatórias e selecione um usuário.');
       return;
     }
+
+    // Validação Cidade de Origem
+    if (loadingCitiesCreated) {
+      setErrorMessage('Aguarde o carregamento das cidades da UF onde foi feito.');
+      return;
+    }
+    if (fetchFailedCreated) {
+      setErrorMessage('Erro ao carregar cidades da UF onde foi feito. Clique em "Tentar novamente" no formulário.');
+      return;
+    }
+    const normalizedInputCreated = cityCreatedInput.trim().toLowerCase();
+    const matchedCreated = citiesCreated.find(c => c.toLowerCase() === normalizedInputCreated);
+    if (!matchedCreated) {
+      setErrorMessage('Por favor, selecione uma Cidade de Origem válida a partir da lista de sugestões.');
+      return;
+    }
+    const finalCityCreated = `${matchedCreated} - ${stateCreated}`;
+
+    // Validação Cidade do Fashion Day
+    if (loadingCitiesFashionDay) {
+      setErrorMessage('Aguarde o carregamento das cidades da UF do Fashion Day.');
+      return;
+    }
+    if (fetchFailedFashionDay) {
+      setErrorMessage('Erro ao carregar cidades da UF do Fashion Day. Clique em "Tentar novamente" no formulário.');
+      return;
+    }
+    const normalizedInputFashion = cityFashionDayInput.trim().toLowerCase();
+    const matchedFashion = citiesFashionDay.find(c => c.toLowerCase() === normalizedInputFashion);
+    if (!matchedFashion) {
+      setErrorMessage('Por favor, selecione uma Cidade do Fashion Day válida a partir da lista de sugestões.');
+      return;
+    }
+    const finalCityFashionDay = `${matchedFashion} - ${stateFashionDay}`;
 
     setUploading(true);
     setStatus('uploading');
@@ -71,8 +169,8 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
 
     try {
       const metadata = {
-        cityCreated: cityCreated.trim(),
-        cityFashionDay: cityFashionDay.trim(),
+        cityCreated: finalCityCreated,
+        cityFashionDay: finalCityFashionDay,
         payment: parseFloat(payment) || 0,
         commissionBox: commissionBox.trim(),
         assignedTo: assignedTo
@@ -93,8 +191,19 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
 
   const resetForm = () => {
     setFile(null);
-    setCityCreated('');
-    setCityFashionDay('');
+    
+    // Reset novos estados da Etapa 1
+    setStateCreated('');
+    setCitiesCreated([]);
+    setCityCreatedInput('');
+    setLoadingCitiesCreated(false);
+    setFetchFailedCreated(false);
+    setStateFashionDay('');
+    setCitiesFashionDay([]);
+    setCityFashionDayInput('');
+    setLoadingCitiesFashionDay(false);
+    setFetchFailedFashionDay(false);
+
     setPayment('');
     setCommissionBox('');
     setAssignedTo('');
@@ -103,6 +212,46 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
     setStatus('idle');
     setErrorMessage('');
     onClose();
+  };
+
+  const handleStateCreatedChange = async (uf) => {
+    setStateCreated(uf);
+    setCityCreatedInput('');
+    setFetchFailedCreated(false);
+    if (!uf) {
+      setCitiesCreated([]);
+      return;
+    }
+    setLoadingCitiesCreated(true);
+    try {
+      const list = await fetchCitiesForState(uf);
+      setCitiesCreated(list);
+    } catch (err) {
+      logger.error('Erro ao carregar cidades da UF:', uf, err);
+      setFetchFailedCreated(true);
+    } finally {
+      setLoadingCitiesCreated(false);
+    }
+  };
+
+  const handleStateFashionDayChange = async (uf) => {
+    setStateFashionDay(uf);
+    setCityFashionDayInput('');
+    setFetchFailedFashionDay(false);
+    if (!uf) {
+      setCitiesFashionDay([]);
+      return;
+    }
+    setLoadingCitiesFashionDay(true);
+    try {
+      const list = await fetchCitiesForState(uf);
+      setCitiesFashionDay(list);
+    } catch (err) {
+      logger.error('Erro ao carregar cidades da UF:', uf, err);
+      setFetchFailedFashionDay(true);
+    } finally {
+      setLoadingCitiesFashionDay(false);
+    }
   };
 
   const handleAssignedToChange = (val) => {
@@ -197,33 +346,113 @@ export default function UploadModal({ isOpen, onClose, onUpload, users = [] }) {
 
               {/* Informações de Metadados */}
               <div className="form-group">
-                <label htmlFor="cityCreated">Cidade onde foi feito</label>
-                <input
-                  id="cityCreated"
-                  type="text"
-                  className="input-field"
-                  style={{ paddingLeft: '16px' }}
-                  placeholder="Ex: São Paulo - SP"
-                  value={cityCreated}
-                  onChange={(e) => setCityCreated(e.target.value)}
-                  disabled={uploading}
-                  required
-                />
+                <label>Cidade onde foi feito</label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '30%' }}>
+                    <select
+                      className="input-field"
+                      style={{ paddingLeft: '12px', height: '52px', color: 'var(--text-main)', background: 'var(--bg-input)' }}
+                      value={stateCreated}
+                      onChange={(e) => handleStateCreatedChange(e.target.value)}
+                      disabled={uploading}
+                      required
+                    >
+                      <option value="" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}>UF</option>
+                      {ESTADOS_BRASIL.map(est => (
+                        <option key={est.sigla} value={est.sigla} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                          {est.sigla}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ width: '70%', position: 'relative' }}>
+                    <input
+                      id="cityCreated"
+                      type="text"
+                      list="cityCreatedList"
+                      className="input-field"
+                      style={{ paddingLeft: '16px' }}
+                      placeholder={
+                        loadingCitiesCreated 
+                          ? "Carregando..." 
+                          : fetchFailedCreated 
+                            ? "Erro ao carregar lista de cidades" 
+                            : !stateCreated 
+                              ? "Selecione a UF..." 
+                              : "Ex: São Paulo"
+                      }
+                      value={cityCreatedInput}
+                      onChange={(e) => setCityCreatedInput(e.target.value)}
+                      disabled={uploading || !stateCreated || loadingCitiesCreated || fetchFailedCreated}
+                      required
+                    />
+                    <datalist id="cityCreatedList">
+                      {citiesCreated.map((city, idx) => (
+                        <option key={idx} value={city} />
+                      ))}
+                    </datalist>
+                    {fetchFailedCreated && (
+                      <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>
+                        Falha ao carregar cidades. <button type="button" onClick={() => handleStateCreatedChange(stateCreated)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Tentar novamente</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="cityFashionDay">Cidade onde será o Fashion Day</label>
-                <input
-                  id="cityFashionDay"
-                  type="text"
-                  className="input-field"
-                  style={{ paddingLeft: '16px' }}
-                  placeholder="Ex: Belo Horizonte - MG"
-                  value={cityFashionDay}
-                  onChange={(e) => setCityFashionDay(e.target.value)}
-                  disabled={uploading}
-                  required
-                />
+                <label>Cidade onde será o Fashion Day</label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '30%' }}>
+                    <select
+                      className="input-field"
+                      style={{ paddingLeft: '12px', height: '52px', color: 'var(--text-main)', background: 'var(--bg-input)' }}
+                      value={stateFashionDay}
+                      onChange={(e) => handleStateFashionDayChange(e.target.value)}
+                      disabled={uploading}
+                      required
+                    >
+                      <option value="" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}>UF</option>
+                      {ESTADOS_BRASIL.map(est => (
+                        <option key={est.sigla} value={est.sigla} style={{ background: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                          {est.sigla}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ width: '70%', position: 'relative' }}>
+                    <input
+                      id="cityFashionDay"
+                      type="text"
+                      list="cityFashionDayList"
+                      className="input-field"
+                      style={{ paddingLeft: '16px' }}
+                      placeholder={
+                        loadingCitiesFashionDay 
+                          ? "Carregando..." 
+                          : fetchFailedFashionDay 
+                            ? "Erro ao carregar lista de cidades" 
+                            : !stateFashionDay 
+                              ? "Selecione a UF..." 
+                              : "Ex: Belo Horizonte"
+                      }
+                      value={cityFashionDayInput}
+                      onChange={(e) => setCityFashionDayInput(e.target.value)}
+                      disabled={uploading || !stateFashionDay || loadingCitiesFashionDay || fetchFailedFashionDay}
+                      required
+                    />
+                    <datalist id="cityFashionDayList">
+                      {citiesFashionDay.map((city, idx) => (
+                        <option key={idx} value={city} />
+                      ))}
+                    </datalist>
+                    {fetchFailedFashionDay && (
+                      <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px' }}>
+                        Falha ao carregar cidades. <button type="button" onClick={() => handleStateFashionDayChange(stateFashionDay)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Tentar novamente</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="form-group">
